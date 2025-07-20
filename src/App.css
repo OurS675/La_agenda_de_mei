@@ -1,0 +1,339 @@
+.mei-container {
+  max-width: 700px;
+  margin: 2rem auto;
+  background: #fff8f0;
+  border-radius: 24px;
+  box-shadow: 0 4px 24px 0 #f7d6e0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 80vh;
+}
+
+.mei-header {
+  background: linear-gradient(90deg, #ffe0f7 0%, #c7eaff 100%);
+  padding: 2rem 1rem 1rem 1rem;
+  text-align: center;
+}
+
+.mei-header h1 {
+  margin: 0 0 1rem 0;
+  font-family: 'Quicksand', cursive, sans-serif;
+  font-size: 2.5rem;
+  color: #a77ff2;
+  letter-spacing: 2px;
+}
+
+nav {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+nav button {
+  background: #f7d6e0;
+  border: none;
+  border-radius: 16px;
+  padding: 0.5rem 1.5rem;
+  font-size: 1rem;
+  color: #a77ff2;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+nav button.active, nav button:hover {
+  background: #c7eaff;
+  color: #fff;
+}
+
+main {
+  flex: 1;
+  padding: 2rem 1.5rem;
+}
+
+.mei-section {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px #ffe0f7;
+  padding: 2rem 1rem;
+  margin-bottom: 2rem;
+}
+
+.mei-upload-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.mei-upload-form input[type="file"] {
+  background: #f7d6e0;
+  border-radius: 8px;
+  padding: 0.5rem;
+}
+
+.mei-upload-form input[type="text"] {
+  border: 1px solid #c7eaff;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+}
+
+.mei-upload-form button {
+  background: #a77ff2;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 1.5rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.mei-upload-form button:hover {
+  background: #f7d6e0;
+  color: #a77ff2;
+}
+
+.mei-upload-form select {
+  border: 1px solid #c7eaff;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  background: #f7d6e0;
+  color: #a77ff2;
+  margin-bottom: 0.2rem;
+  outline: none;
+  transition: border 0.2s;
+}
+.mei-upload-form select:focus {
+  border: 1.5px solid #a77ff2;
+}
+
+.mei-cliente-info {
+  background: #ffe0f7;
+  border-radius: 12px;
+  padding: 1rem;
+  margin-top: 1rem;
+  color: #a77ff2;
+  font-size: 1.1rem;
+}
+
+.mei-footer {
+  background: #c7eaff;
+  color: #fff;
+  text-align: center;
+  padding: 1rem;
+  font-size: 1rem;
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+}
+
+.logout-btn {
+  background: #ffe0f7;
+  color: #a77ff2;
+  border: none;
+  border-radius: 8px;
+  padding: 0.3rem 1rem;
+  font-size: 0.95rem;
+  margin-top: 1rem;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  float: right;
+}
+.logout-btn:hover {
+  background: #a77ff2;
+  color: #fff;
+}
+
+.mei-avances-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2.2rem;
+  margin-top: 2rem;
+}
+.mei-avance-item {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 1.5rem;
+  background: linear-gradient(120deg, #fff8f0 60%, #ffe0f7 100%);
+  border-radius: 18px;
+  padding: 1.5rem 1.2rem;
+  box-shadow: 0 4px 18px #f7d6e0cc, 0 1.5px 6px #c7eaff44;
+  transition: transform 0.15s, box-shadow 0.15s;
+  position: relative;
+}
+.mei-avance-item:hover {
+  transform: translateY(-4px) scale(1.015);
+  box-shadow: 0 8px 32px #c7eaff99, 0 2px 8px #ffe0f7cc;
+}
+.mei-avance-file {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 120px;
+  min-height: 120px;
+  max-width: 140px;
+  max-height: 140px;
+  background: #f7d6e0;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px #c7eaff44;
+  overflow: hidden;
+}
+.mei-avance-file img {
+  max-width: 120px;
+  max-height: 120px;
+  border-radius: 8px;
+  object-fit: cover;
+  box-shadow: 0 1px 4px #c7eaff;
+}
+.mei-avance-file a {
+  color: #a77ff2;
+  text-decoration: underline;
+  font-size: 1rem;
+  word-break: break-all;
+  padding: 0.5rem;
+}
+.mei-avance-desc {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  justify-content: center;
+}
+.mei-avance-desc strong {
+  font-size: 1.15rem;
+  color: #a77ff2;
+  margin-bottom: 0.2rem;
+  font-family: 'Quicksand', cursive, sans-serif;
+}
+.mei-avance-date {
+  font-size: 0.95rem;
+  color: #888;
+  margin-top: 0.2rem;
+}
+.mei-avances-empty {
+  color: #a77ff2;
+  text-align: center;
+  margin-top: 2rem;
+  font-size: 1.1rem;
+}
+
+.mei-avances-visitante {
+  margin-top: 1.5rem;
+  color: #888;
+  font-size: 1.05rem;
+  text-align: center;
+  background: #c7eaff33;
+  border-radius: 8px;
+  padding: 0.7rem 1rem;
+}
+
+.mei-delete-btn {
+  background: #ffe0f7;
+  color: #a77ff2;
+  border: none;
+  border-radius: 50%;
+  width: 2.2rem;
+  height: 2.2rem;
+  font-size: 1.3rem;
+  cursor: pointer;
+  margin-left: 0.5rem;
+  align-self: flex-start;
+  transition: background 0.2s, color 0.2s;
+  position: absolute;
+  top: 1.2rem;
+  right: 1.2rem;
+  box-shadow: 0 1px 4px #c7eaff44;
+}
+.mei-delete-btn:hover {
+  background: #a77ff2;
+  color: #fff;
+}
+
+.mei-ver-todos-btn {
+  background: #a77ff2;
+  color: #fff;
+  border: none;
+  border-radius: 16px;
+  padding: 0.6rem 2rem;
+  font-size: 1.08rem;
+  font-family: 'Quicksand', cursive, sans-serif;
+  cursor: pointer;
+  margin-top: 0.5rem;
+  box-shadow: 0 1px 4px #c7eaff44;
+  transition: background 0.2s, color 0.2s, transform 0.1s;
+}
+.mei-ver-todos-btn:hover {
+  background: #f7d6e0;
+  color: #a77ff2;
+  transform: scale(1.04);
+}
+@media (max-width: 600px) {
+  .mei-avance-item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.7rem;
+    padding: 1rem 0.5rem;
+  }
+  .mei-avance-file {
+    min-width: 100%;
+    min-height: 80px;
+    max-width: 100%;
+    max-height: 120px;
+  }
+  .mei-delete-btn {
+    top: 0.7rem;
+    right: 0.7rem;
+  }
+} 
+
+.mei-vista-previa-reciente {
+  margin-top: 2.5rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+.mei-vista-previa-reciente h3 {
+  color: #a77ff2;
+  font-size: 1.25rem;
+  margin-bottom: 1.2rem;
+  font-family: 'Quicksand', cursive, sans-serif;
+  letter-spacing: 1px;
+} 
+
+.mei-filtro-avances {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-bottom: 1.2rem;
+  font-size: 1.08rem;
+  color: #a77ff2;
+  font-family: 'Quicksand', cursive, sans-serif;
+}
+.mei-filtro-avances select {
+  border: 1px solid #c7eaff;
+  border-radius: 8px;
+  padding: 0.3rem 1rem;
+  font-size: 1rem;
+  background: #f7d6e0;
+  color: #a77ff2;
+  outline: none;
+  transition: border 0.2s;
+}
+.mei-filtro-avances select:focus {
+  border: 1.5px solid #a77ff2;
+}
+.mei-avance-tipo {
+  display: inline-block;
+  margin-top: 0.5rem;
+  padding: 0.2em 0.9em;
+  font-size: 0.98em;
+  border-radius: 12px;
+  background: #c7eaff44;
+  color: #a77ff2;
+  font-weight: 600;
+  letter-spacing: 1px;
+  font-family: 'Quicksand', cursive, sans-serif;
+} 
