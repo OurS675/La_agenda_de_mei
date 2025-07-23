@@ -19,7 +19,7 @@
     min-width: 0 !important;
   }
   .mei-edit-btn, .mei-delete-btn, .mei-ver-todos-btn, .login-btn, .logout-btn {
-    width: auto !important;
+    width: 100% !important;
     min-width: 0 !important;
     margin: 0 0 8px 0 !important;
     text-align: center !important;

@@ -1,3 +1,6 @@
+body.modal-open {
+  overflow: hidden !important;
+}
 /* Modal login mejorado */
 .login-modal-form {
   /* Botones del modal de login del mismo ancho y padding que el input */

@@ -1,4 +1,151 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react';
+// Asegura que la clase modal-open se quite siempre que el modal esté cerrado
+// (esto debe ir dentro del componente App, no fuera)
+// Modal de imagen grande reutilizable
+function ImagenModal({ url, alt, onClose }) {
+  if (!url) return null;
+  const [scale, setScale] = React.useState(1);
+  const [offset, setOffset] = React.useState({ x: 0, y: 0 });
+  const [dragging, setDragging] = React.useState(false);
+  const [start, setStart] = React.useState({ x: 0, y: 0 });
+  const [imgStart, setImgStart] = React.useState({ x: 0, y: 0 });
+  const imgRef = React.useRef(null);
+
+  // Usar clase CSS para bloquear el scroll del body
+  React.useEffect(() => {
+    if (url) {
+      document.body.classList.add('modal-open');
+    }
+    return () => {
+      document.body.classList.remove('modal-open');
+    };
+  }, [url]);
+
+  // Reset zoom/offset when url changes
+  React.useEffect(() => {
+    setScale(1);
+    setOffset({ x: 0, y: 0 });
+  }, [url]);
+
+  // Zoom con rueda del mouse
+  const handleWheel = (e) => {
+    e.preventDefault();
+    let newScale = scale + (e.deltaY < 0 ? 0.2 : -0.2);
+    newScale = Math.max(1, Math.min(newScale, 5));
+    setScale(newScale);
+  };
+
+  // Arrastrar imagen (pan)
+  const handleMouseDown = (e) => {
+    if (scale === 1) return;
+    e.preventDefault();
+    setDragging(true);
+    setStart({ x: e.clientX, y: e.clientY });
+    setImgStart({ ...offset });
+  };
+  const handleMouseMove = (e) => {
+    if (!dragging) return;
+    setOffset({
+      x: imgStart.x + (e.clientX - start.x),
+      y: imgStart.y + (e.clientY - start.y),
+    });
+  };
+  const handleMouseUp = () => setDragging(false);
+
+  // Touch events para móvil
+  const handleTouchStart = (e) => {
+    if (scale === 1) return;
+    if (e.touches.length === 1) {
+      setDragging(true);
+      setStart({ x: e.touches[0].clientX, y: e.touches[0].clientY });
+      setImgStart({ ...offset });
+    }
+  };
+  const handleTouchMove = (e) => {
+    if (!dragging || e.touches.length !== 1) return;
+    setOffset({
+      x: imgStart.x + (e.touches[0].clientX - start.x),
+      y: imgStart.y + (e.touches[0].clientY - start.y),
+    });
+  };
+  const handleTouchEnd = () => setDragging(false);
+
+  // Doble click/tap para resetear zoom
+  const handleDoubleClick = (e) => {
+    e.stopPropagation();
+    if (scale > 1) {
+      setScale(1);
+      setOffset({ x: 0, y: 0 });
+    } else {
+      window.open(url, '_blank');
+    }
+  };
+
+  // Botones de zoom
+  const zoomIn = () => setScale(s => Math.min(s + 0.2, 5));
+  const zoomOut = () => setScale(s => Math.max(s - 0.2, 1));
+  const resetZoom = () => { setScale(1); setOffset({ x: 0, y: 0 }); };
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        zIndex: 2000,
+        top: 0,
+        left: 0,
+        width: '100vw',
+        height: '100vh',
+        background: 'rgba(40,30,60,0.85)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        userSelect: dragging ? 'none' : 'auto',
+        overflow: 'auto',
+      }}
+      onClick={onClose}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      <img
+        ref={imgRef}
+        src={url}
+        alt={alt}
+        style={{
+          maxWidth: scale === 1 ? '90vw' : 'none',
+          maxHeight: scale === 1 ? '90vh' : 'none',
+          width: 'auto',
+          height: 'auto',
+          borderRadius: 18,
+          boxShadow: '0 8px 32px #a77ff299',
+          cursor: scale > 1 ? (dragging ? 'grabbing' : 'grab') : 'zoom-in',
+          background: '#fff',
+          transform: `scale(${scale}) translate(${offset.x / scale}px, ${offset.y / scale}px)` ,
+          transition: dragging ? 'none' : 'transform 0.2s',
+          touchAction: 'none',
+          margin: 'auto',
+          display: 'block',
+        }}
+        onClick={e => { e.stopPropagation(); if (scale === 1) setScale(2); }}
+        onDoubleClick={handleDoubleClick}
+        onWheel={handleWheel}
+        onMouseDown={handleMouseDown}
+        onTouchStart={handleTouchStart}
+        draggable={false}
+        title={scale > 1 ? 'Arrastra para mover. Doble click para resetear.' : 'Haz click o usa la rueda para ampliar'}
+      />
+      {/* Controles de zoom */}
+      <div style={{ position: 'fixed', bottom: 36, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 12, zIndex: 2100 }}>
+        <button onClick={e => { e.stopPropagation(); zoomOut(); }} style={{ fontSize: 24, padding: '6px 16px', borderRadius: 16, border: 'none', background: '#fff', color: '#a77ff2', fontWeight: 700, boxShadow: '0 2px 8px #a77ff244', cursor: 'pointer' }}>−</button>
+        <button onClick={e => { e.stopPropagation(); resetZoom(); }} style={{ fontSize: 18, padding: '6px 16px', borderRadius: 16, border: 'none', background: '#fff', color: '#a77ff2', fontWeight: 700, boxShadow: '0 2px 8px #a77ff244', cursor: 'pointer' }}>Reset</button>
+        <button onClick={e => { e.stopPropagation(); zoomIn(); }} style={{ fontSize: 24, padding: '6px 16px', borderRadius: 16, border: 'none', background: '#fff', color: '#a77ff2', fontWeight: 700, boxShadow: '0 2px 8px #a77ff244', cursor: 'pointer' }}>+</button>
+      </div>
+      <button onClick={onClose} style={{ position: 'fixed', top: 24, right: 32, background: '#fff', color: '#a77ff2', border: 'none', borderRadius: 24, fontWeight: 700, fontSize: 22, padding: '6px 18px', cursor: 'pointer', boxShadow: '0 2px 8px #a77ff244', zIndex: 2100 }}>✕</button>
+    </div>
+  );
+}
 import { supabase } from './supabaseClient'
 import './App.css'
 import './responsive.css'
@@ -7,6 +154,13 @@ import Swal from 'sweetalert2'
 const CLIENTE_PASSWORD = 'mei2024'
 
 function App() {
+  const [imagenModal, setImagenModal] = useState({ url: null, alt: '' });
+  // Asegura que la clase modal-open se quite siempre que el modal esté cerrado
+  useEffect(() => {
+    if (!imagenModal.url) {
+      document.body.classList.remove('modal-open');
+    }
+  }, [imagenModal.url]);
   const [vista, setVista] = useState('proyectos') // 'proyectos', 'avances' o 'cliente'
   const [filtroVista, setFiltroVista] = useState('proyectos') // 'proyectos' o 'avances'
   const [proyectos, setProyectos] = useState([])
@@ -87,6 +241,7 @@ function App() {
 
   return (
     <div className="mei-container" style={{ minHeight: '100vh', background: '#f5f3fa' }}>
+      <ImagenModal url={imagenModal.url} alt={imagenModal.alt} onClose={() => setImagenModal({ url: null, alt: '' })} />
       <header className="mei-header" style={{ boxShadow: '0 2px 8px #eee', marginBottom: 24, padding: '16px 0', background: '#fff', borderRadius: 0 }}>
         <div className="mei-header-inner" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', maxWidth: 900, margin: '0 auto', padding: '0 16px', flexWrap: 'wrap' }}>
           <h1 style={{ fontSize: 28, color: '#a77ff2', margin: 0, letterSpacing: 1, flex: 1, minWidth: 180 }}>La Agenda de Mei</h1>
@@ -134,7 +289,7 @@ function App() {
             clienteAuth={clienteAuth}
           />
         ) : vista === 'cliente' ? (
-          <VistaCliente onVolver={volverAProyectos} />
+          <VistaCliente onVolver={volverAProyectos} clienteAuth={clienteAuth} />
         ) : null}
       </main>
       <footer className="mei-footer">
@@ -143,20 +298,229 @@ function App() {
     </div>
   )
 // Apartado de información del cliente
-function VistaCliente({ onVolver }) {
+function VistaCliente({ onVolver, clienteAuth }) {
+  const [cliente, setCliente] = useState({
+    nombre: '',
+    telefono: '',
+    email: '',
+    imagen_url: '',
+    acerca_de: '',
+    red_social: '',
+    // id: undefined (solo se agrega si existe en la base de datos)
+  });
+  const [editando, setEditando] = useState(false);
+  const [cargando, setCargando] = useState(false);
+  const [archivo, setArchivo] = useState(null);
+  const [archivoPreview, setArchivoPreview] = useState(null);
+  const [mensaje, setMensaje] = useState('');
+
+  // Cargar datos del cliente al montar
+  useEffect(() => {
+    async function fetchCliente() {
+      setCargando(true);
+      // Buscar el primer cliente existente (no dependas de id=1)
+      const { data, error } = await supabase.from('cliente').select('*').limit(1).maybeSingle();
+      if (data) {
+        setCliente(data); // data incluye id
+      } else {
+        // Si no hay datos, dejar el formulario editable para crear el cliente
+        setCliente({
+          nombre: '',
+          telefono: '',
+          email: '',
+          imagen_url: '',
+          acerca_de: '',
+          red_social: '',
+        });
+        setEditando(true);
+      }
+      setCargando(false);
+    }
+    fetchCliente();
+  }, []);
+
+  // Manejar cambios en los inputs
+  function handleChange(e) {
+    setCliente({ ...cliente, [e.target.name]: e.target.value });
+  }
+
+  // Manejar subida de imagen
+  async function handleImagen(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    setArchivo(file);
+    setCliente({ ...cliente, imagen_url: URL.createObjectURL(file) });
+  }
+
+  // Entrar en modo edición
+  function handleEditar() {
+    setEditando(true);
+    setCargando(false); // Asegura que no esté en modo cargando al editar
+    setMensaje('');
+  }
+
+  // Guardar cambios
+  async function handleGuardar(e) {
+    e.preventDefault();
+    setCargando(true);
+    let imagen_url = cliente.imagen_url;
+    if (archivo) {
+      const nombreArchivo = `cliente_${Date.now()}_${archivo.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+      const { data, error: uploadError } = await supabase.storage.from('imagenes').upload(nombreArchivo, archivo);
+      if (uploadError) {
+        setMensaje('Error subiendo imagen');
+        setCargando(false);
+        return;
+      }
+      imagen_url = supabase.storage.from('imagenes').getPublicUrl(nombreArchivo).data.publicUrl;
+    }
+    // Solo enviar los campos válidos y no vacíos de la tabla cliente
+    const allowedFields = ['nombre', 'telefono', 'email', 'imagen_url', 'acerca_de', 'red_social'];
+    const clienteData = {};
+    allowedFields.forEach(field => {
+      if (field === 'imagen_url') {
+        if (typeof imagen_url === 'string' && imagen_url.trim() !== '') {
+          clienteData.imagen_url = imagen_url;
+        }
+      } else if (typeof cliente[field] === 'string' && cliente[field].trim() !== '') {
+        // Si el campo es telefono y es numérico en la base, conviértelo
+        if (field === 'telefono' && !isNaN(cliente[field])) {
+          clienteData.telefono = Number(cliente[field]);
+        } else {
+          clienteData[field] = cliente[field].trim();
+        }
+      }
+    });
+    let result, error;
+    if (cliente.id !== undefined && cliente.id !== null && typeof cliente.id === 'number' && !isNaN(cliente.id)) {
+      // UPDATE: solo si existe id
+      console.log('Payload a enviar a Supabase (update):', clienteData);
+      result = await supabase.from('cliente').update(clienteData).eq('id', cliente.id);
+      error = result.error;
+    } else {
+      // INSERT: solo si NO existe id
+      let insertData = { ...clienteData };
+      if ('id' in insertData) delete insertData.id;
+      Object.keys(insertData).forEach(k => { if (k === 'id') delete insertData[k]; });
+      console.log('Payload a enviar a Supabase (insert):', insertData);
+      result = await supabase.from('cliente').insert([insertData]);
+      error = result.error;
+    }
+    if (error) {
+      console.error('Error Supabase:', error);
+      setMensaje('Error guardando datos: ' + (error.message || ''));
+    } else {
+      setMensaje('Datos guardados correctamente');
+      setEditando(false);
+      setArchivo(null);
+      // Recargar datos del cliente para reflejar los cambios (y obtener el id generado)
+      const { data } = await supabase.from('cliente').select('*').limit(1).maybeSingle();
+      if (data) setCliente(data);
+    }
+    setCargando(false);
+  }
+
   return (
     <section className="mei-section">
       <button className="mei-ver-todos-btn" onClick={onVolver} style={{ marginBottom: 16 }}>&larr; Volver</button>
-      <h2>Información del Cliente</h2>
-      <div style={{ marginBottom: 16 }}>
-        <strong>Nombre:</strong> Mei<br />
-        <strong>Email:</strong> mei@email.com<br />
-        <strong>Teléfono:</strong> 123-456-7890<br />
-        <strong>Notas:</strong> Aquí puedes agregar información relevante del cliente, como instrucciones, links, etc.
-      </div>
-      {/* Puedes personalizar este apartado con más datos o funcionalidades */}
+      <h2 style={{ color: '#a77ff2', fontWeight: 700, marginBottom: 18 }}>Información del Cliente</h2>
+      {cargando && !editando ? <div>Cargando...</div> : (
+        <>
+          <form onSubmit={handleGuardar} style={{
+            display: 'flex', flexDirection: 'column', gap: 18, maxWidth: 420, alignItems: 'center', margin: '0 auto', background: '#fff', borderRadius: 18, boxShadow: '0 2px 12px #e5d8fa', padding: '32px 28px 24px 28px', border: '1px solid #f0eaff'
+          }}>
+            {/* Imagen de perfil grande y centrada */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 12, width: '100%' }}>
+              {editando ? (
+                <>
+                  {(archivoPreview || cliente.imagen_url) && (
+                    <img
+                      src={archivoPreview || cliente.imagen_url}
+                      alt="Imagen cliente"
+                      style={{
+                        width: 180,
+                        height: 180,
+                        objectFit: 'cover',
+                        borderRadius: '50%',
+                        boxShadow: '0 4px 24px #a77ff244',
+                        marginBottom: 10,
+                        border: '4px solid #fff',
+                        background: '#eee',
+                        display: 'block',
+                      }}
+                    />
+                  )}
+                  {clienteAuth && (
+                    <label style={{ display: 'inline-block', background: '#f7d6e0', color: '#a77ff2', borderRadius: 8, padding: '10px 22px', fontWeight: 700, fontSize: 15, cursor: 'pointer', marginTop: 4, boxShadow: '0 1px 4px #e5d8fa', border: '1.5px solid #e5d8fa' }}>
+                      <span>Seleccionar imagen</span>
+                      <input type="file" accept="image/*" onChange={handleImagen} style={{ display: 'none' }} />
+                    </label>
+                  )}
+                </>
+              ) : (
+                cliente.imagen_url && (
+                  <img
+                    src={cliente.imagen_url}
+                    alt="Imagen cliente"
+                    style={{
+                      width: 180,
+                      height: 180,
+                      objectFit: 'cover',
+                      borderRadius: '50%',
+                      boxShadow: '0 4px 24px #a77ff244',
+                      marginBottom: 10,
+                      border: '4px solid #fff',
+                      background: '#eee',
+                      display: 'block',
+                    }}
+                  />
+                )
+              )}
+            </div>
+            <label style={{ width: '100%', fontWeight: 600, color: '#a77ff2', marginBottom: 2 }}>Nombre:
+              <input name="nombre" value={cliente.nombre} onChange={handleChange} disabled={!editando} required style={{
+                width: '100%', padding: '10px', borderRadius: 8, border: '1.5px solid #e5d8fa', fontSize: 16, marginTop: 4, background: editando ? '#faf8ff' : '#f5f3fa', transition: 'background 0.2s'
+              }} />
+            </label>
+            <label style={{ width: '100%', fontWeight: 600, color: '#a77ff2', marginBottom: 2 }}>Teléfono:
+              <input name="telefono" value={cliente.telefono} onChange={handleChange} disabled={!editando} required style={{
+                width: '100%', padding: '10px', borderRadius: 8, border: '1.5px solid #e5d8fa', fontSize: 16, marginTop: 4, background: editando ? '#faf8ff' : '#f5f3fa', transition: 'background 0.2s'
+              }} />
+            </label>
+            <label style={{ width: '100%', fontWeight: 600, color: '#a77ff2', marginBottom: 2 }}>Email:
+              <input name="email" value={cliente.email} onChange={handleChange} disabled={!editando} required type="email" style={{
+                width: '100%', padding: '10px', borderRadius: 8, border: '1.5px solid #e5d8fa', fontSize: 16, marginTop: 4, background: editando ? '#faf8ff' : '#f5f3fa', transition: 'background 0.2s'
+              }} />
+            </label>
+            <label style={{ width: '100%', fontWeight: 600, color: '#a77ff2', marginBottom: 2 }}>Acerca de:
+              <textarea name="acerca_de" value={cliente.acerca_de} onChange={handleChange} disabled={!editando} style={{
+                width: '100%', padding: '10px', borderRadius: 8, border: '1.5px solid #e5d8fa', fontSize: 16, marginTop: 4, minHeight: 60, background: editando ? '#faf8ff' : '#f5f3fa', transition: 'background 0.2s'
+              }} />
+            </label>
+            <label style={{ width: '100%', fontWeight: 600, color: '#a77ff2', marginBottom: 2 }}>Red social:
+              <input name="red_social" value={cliente.red_social} onChange={handleChange} disabled={!editando} placeholder="Instagram, Facebook, etc." style={{
+                width: '100%', padding: '10px', borderRadius: 8, border: '1.5px solid #e5d8fa', fontSize: 16, marginTop: 4, background: editando ? '#faf8ff' : '#f5f3fa', transition: 'background 0.2s'
+              }} />
+            </label>
+            {clienteAuth && editando && (
+              <button className="mei-ver-todos-btn" type="submit" disabled={cargando} style={{
+                background: '#a77ff2', color: '#fff', border: 'none', borderRadius: 8, padding: '12px 0', fontWeight: 700, fontSize: 17, marginTop: 8, boxShadow: '0 2px 8px #e5d8fa', letterSpacing: 1, transition: 'background 0.2s'
+              }}>Guardar</button>
+            )}
+            {mensaje && <div style={{ color: mensaje.includes('Error') ? 'red' : 'green', marginTop: 8, fontWeight: 600 }}>{mensaje}</div>}
+          </form>
+          {/* Botón Editar fuera del formulario */}
+          {clienteAuth && !editando && (
+            <div style={{ display: 'flex', justifyContent: 'center', width: '100%', marginTop: 18 }}>
+              <button className="mei-ver-todos-btn" type="button" onClick={handleEditar} style={{
+                background: '#a77ff2', color: '#fff', border: 'none', borderRadius: 8, padding: '12px 0', fontWeight: 700, fontSize: 17, boxShadow: '0 2px 8px #e5d8fa', letterSpacing: 1, transition: 'background 0.2s', width: 420, maxWidth: '100%'
+              }}>Editar</button>
+            </div>
+          )}
+        </>
+      )}
     </section>
-  )
+  );
 }
 
 function LoginModal({ onLogin, error, onClose }) {
@@ -190,12 +554,33 @@ function VistaProyectos({ proyectos, onAgregar, onVerAvances, cargando, error, c
   const [descripcion, setDescripcion] = useState('')
   const [estado, setEstado] = useState('activo')
   const [archivo, setArchivo] = useState(null)
+  const [archivoPreview, setArchivoPreview] = useState(null)
   const [agregando, setAgregando] = useState(false)
   const [editandoId, setEditandoId] = useState(null)
   const [editNombre, setEditNombre] = useState('')
   const [editDescripcion, setEditDescripcion] = useState('')
   const [editEstado, setEditEstado] = useState('activo')
   const [editArchivo, setEditArchivo] = useState(null)
+  const [editArchivoPreview, setEditArchivoPreview] = useState(null)
+  function handleArchivoChange(e) {
+    const file = e.target.files[0];
+    setArchivo(file);
+    if (file) {
+      setArchivoPreview(URL.createObjectURL(file));
+    } else {
+      setArchivoPreview(null);
+    }
+  }
+
+  function handleEditArchivoChange(e) {
+    const file = e.target.files[0];
+    setEditArchivo(file);
+    if (file) {
+      setEditArchivoPreview(URL.createObjectURL(file));
+    } else {
+      setEditArchivoPreview(null);
+    }
+  }
   const [errorLocal, setErrorLocal] = useState(null)
   const [erroresForm, setErroresForm] = useState({})
   const [erroresEdit, setErroresEdit] = useState({})
@@ -240,6 +625,7 @@ function VistaProyectos({ proyectos, onAgregar, onVerAvances, cargando, error, c
     setDescripcion('')
     setEstado('activo')
     setArchivo(null)
+    setArchivoPreview(null)
     setTimeout(() => { onAgregar(); }, 300); // Recarga la lista tras agregar
     setAgregando(false)
   }
@@ -282,6 +668,7 @@ function VistaProyectos({ proyectos, onAgregar, onVerAvances, cargando, error, c
     setEditDescripcion(proy.descripcion)
     setEditEstado(proy.estado || 'activo')
     setEditArchivo(null)
+    setEditArchivoPreview(null)
   }
 
   async function guardarEdicion(id) {
@@ -320,6 +707,7 @@ function VistaProyectos({ proyectos, onAgregar, onVerAvances, cargando, error, c
     setEditDescripcion('')
     setEditEstado('activo')
     setEditArchivo(null)
+    setEditArchivoPreview(null)
     await onAgregar()
   }
 
@@ -328,6 +716,7 @@ function VistaProyectos({ proyectos, onAgregar, onVerAvances, cargando, error, c
     setEditNombre('')
     setEditDescripcion('')
     setEditArchivo(null)
+    setEditArchivoPreview(null)
   }
 
   return (
@@ -335,28 +724,39 @@ function VistaProyectos({ proyectos, onAgregar, onVerAvances, cargando, error, c
       <h2 style={{ color: '#a77ff2', marginBottom: 20, fontWeight: 700 }}>Proyectos</h2>
       {/* Formulario solo para el cliente autenticado */}
       {clienteAuth && (
-        <form className="mei-upload-form" onSubmit={agregarProyecto} style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
+        <form className="mei-upload-form" onSubmit={agregarProyecto} style={{
+          display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 32, background: '#fff', borderRadius: 18, boxShadow: '0 2px 12px #e5d8fa', padding: '32px 28px 24px 28px', border: '1.5px solid #e5d8fa', maxWidth: 520, marginLeft: 'auto', marginRight: 'auto', alignItems: 'center'
+        }}>
+          <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 8 }}>
+            {archivoPreview && (
+              archivo && archivo.type.startsWith('image/') ? (
+                <img src={archivoPreview} alt="Previsualización" style={{ maxWidth: 320, maxHeight: 180, borderRadius: 12, boxShadow: '0 2px 12px #a77ff288', marginBottom: 8, objectFit: 'cover', background: '#faf8ff' }} />
+              ) : archivo && archivo.type.startsWith('video/') ? (
+                <video src={archivoPreview} controls style={{ maxWidth: 320, maxHeight: 180, borderRadius: 12, boxShadow: '0 2px 12px #a77ff288', marginBottom: 8, background: '#faf8ff' }} />
+              ) : null
+            )}
+            <label style={{ display: 'inline-block', background: '#f7d6e0', color: '#a77ff2', borderRadius: 8, padding: '10px 22px', fontWeight: 700, fontSize: 15, cursor: 'pointer', marginBottom: 0, boxShadow: '0 1px 4px #e5d8fa', border: '1.5px solid #e5d8fa' }}>
+              <span>Seleccionar imagen o video</span>
+              <input type="file" accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt" onChange={handleArchivoChange} style={{ display: 'none' }} />
+            </label>
+          </div>
           <input
             type="text"
             placeholder="Nombre del proyecto"
             value={nombre}
             onChange={e => setNombre(e.target.value)}
-            style={{ padding: 10, borderRadius: 6, border: '1px solid #ccc', fontSize: 16 }}
+            style={{ padding: 12, borderRadius: 8, border: '1.5px solid #e5d8fa', fontSize: 16, background: '#faf8ff', marginBottom: 2, width: '100%' }}
           />
-          {erroresForm.nombre && <div style={{ color: 'red', marginBottom: 4 }}>{erroresForm.nombre}</div>}
+          {erroresForm.nombre && <div style={{ color: 'red', marginBottom: 4, fontWeight: 600 }}>{erroresForm.nombre}</div>}
           <textarea
             placeholder="Descripción"
             value={descripcion}
             onChange={e => setDescripcion(e.target.value)}
-            style={{ padding: 10, borderRadius: 6, border: '1px solid #ccc', fontSize: 16, minHeight: 60 }}
+            style={{ padding: 12, borderRadius: 8, border: '1.5px solid #e5d8fa', fontSize: 16, minHeight: 60, background: '#faf8ff', marginBottom: 2, width: '100%' }}
           />
-          <input
-            type="file"
-            accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"
-            onChange={e => setArchivo(e.target.files[0])}
-            style={{ marginTop: 8, marginBottom: 8 }}
-          />
-          <button type="submit" disabled={agregando} style={{ background: '#a77ff2', color: '#fff', border: 'none', borderRadius: 6, padding: '10px 0', fontWeight: 600, fontSize: 16, textAlign: 'center' }}>
+          <button type="submit" disabled={agregando} style={{
+            background: '#a77ff2', color: '#fff', border: 'none', borderRadius: 8, padding: '12px 0', fontWeight: 700, fontSize: 17, marginTop: 8, boxShadow: '0 2px 8px #e5d8fa', letterSpacing: 1, transition: 'background 0.2s', textAlign: 'center', width: '100%'
+          }}>
             Agregar proyecto
           </button>
         </form>
@@ -379,44 +779,49 @@ function VistaProyectos({ proyectos, onAgregar, onVerAvances, cargando, error, c
           <li key={proy.id} className="mei-avance-item" style={{ background: '#faf8ff', borderRadius: 10, marginBottom: 18, boxShadow: '0 1px 6px #eee', padding: '5vw 4vw', display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap', minWidth: 0 }}>
             <div className="mei-avance-desc" style={{ flex: 1, minWidth: 0 }}>
               {editandoId === proy.id ? (
-                <div style={{ background: '#f0eaff', borderRadius: 10, padding: '18px 12px', marginBottom: 8, boxShadow: '0 1px 4px #e5d8fa', display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div style={{ background: '#f0eaff', borderRadius: 14, padding: '22px 16px', marginBottom: 8, boxShadow: '0 2px 8px #e5d8fa', display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 500 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'center' }}>
+                    {editArchivoPreview && (
+                      editArchivo && editArchivo.type.startsWith('image/') ? (
+                        <img src={editArchivoPreview} alt="Previsualización" style={{ maxWidth: 320, maxHeight: 180, borderRadius: 12, boxShadow: '0 2px 12px #a77ff288', marginBottom: 8, objectFit: 'cover', background: '#faf8ff' }} />
+                      ) : editArchivo && editArchivo.type.startsWith('video/') ? (
+                        <video src={editArchivoPreview} controls style={{ maxWidth: 320, maxHeight: 180, borderRadius: 12, boxShadow: '0 2px 12px #a77ff288', marginBottom: 8, background: '#faf8ff' }} />
+                      ) : null
+                    )}
+                    <label style={{ display: 'inline-block', background: '#f7d6e0', color: '#a77ff2', borderRadius: 8, padding: '10px 22px', fontWeight: 700, fontSize: 15, cursor: 'pointer', marginBottom: 0, boxShadow: '0 1px 4px #e5d8fa', border: '1.5px solid #e5d8fa' }}>
+                      <span>Seleccionar imagen o video</span>
+                      <input type="file" accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt" onChange={handleEditArchivoChange} style={{ display: 'none' }} />
+                    </label>
                     <input
                       type="text"
                       value={editNombre}
                       onChange={e => setEditNombre(e.target.value)}
-                      style={{ padding: 8, borderRadius: 6, border: '1px solid #ccc', fontSize: 15 }}
+                      style={{ padding: 12, borderRadius: 8, border: '1.5px solid #e5d8fa', fontSize: 16, background: '#faf8ff', marginBottom: 2, width: '100%' }}
                       placeholder="Nombre del proyecto"
                     />
-                    {erroresEdit.nombre && <div style={{ color: 'red', marginBottom: 4 }}>{erroresEdit.nombre}</div>}
+                    {erroresEdit.nombre && <div style={{ color: 'red', marginBottom: 4, fontWeight: 600 }}>{erroresEdit.nombre}</div>}
                     <textarea
                       value={editDescripcion}
                       onChange={e => setEditDescripcion(e.target.value)}
-                      style={{ padding: 8, borderRadius: 6, border: '1px solid #ccc', fontSize: 15, minHeight: 50 }}
+                      style={{ padding: 12, borderRadius: 8, border: '1.5px solid #e5d8fa', fontSize: 16, minHeight: 50, background: '#faf8ff', marginBottom: 2, width: '100%' }}
                       placeholder="Descripción"
                     />
                     <select
                       value={editEstado}
                       onChange={e => setEditEstado(e.target.value)}
-                      style={{ padding: 8, borderRadius: 6, border: '1px solid #ccc', fontSize: 15 }}
+                      style={{ padding: 12, borderRadius: 8, border: '1.5px solid #e5d8fa', fontSize: 16, background: '#faf8ff', marginBottom: 2, width: '100%' }}
                     >
                       <option value="activo">En progreso</option>
                       <option value="pausado">Pausado</option>
                       <option value="finalizado">Finalizado</option>
                       <option value="cancelado">Cancelado</option>
                     </select>
-                    <input
-                      type="file"
-                      accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"
-                      onChange={e => setEditArchivo(e.target.files[0])}
-                      style={{ marginTop: 8, marginBottom: 8 }}
-                    />
                   </div>
-                  <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 8 }}>
-                    <button className="mei-ver-todos-btn" onClick={() => guardarEdicion(proy.id)} disabled={!editNombre} style={{ background: '#a77ff2', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 24px', minWidth: 90, fontWeight: 600, fontSize: 15, boxShadow: '0 1px 2px #e5d8fa', textAlign: 'center' }}>
+                  <div style={{ display: 'flex', gap: 14, justifyContent: 'flex-end', marginTop: 10 }}>
+                    <button className="mei-ver-todos-btn" onClick={() => guardarEdicion(proy.id)} disabled={!editNombre} style={{ background: '#a77ff2', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 28px', minWidth: 90, fontWeight: 700, fontSize: 16, boxShadow: '0 2px 8px #e5d8fa', textAlign: 'center', letterSpacing: 1 }}>
                       Guardar
                     </button>
-                    <button className="mei-delete-btn" onClick={cancelarEdicion} style={{ background: '#f7d6e0', color: '#a77ff2', border: 'none', borderRadius: 6, padding: '', minWidth: 90, fontWeight: 600, fontSize: 15, boxShadow: '0 1px 2px #e5d8fa', whiteSpace: 'nowrap', textAlign: 'center' }}>
+                    <button className="mei-delete-btn" onClick={cancelarEdicion} style={{ background: '#f7d6e0', color: '#a77ff2', border: 'none', borderRadius: 8, padding: '', minWidth: 90, fontWeight: 700, fontSize: 16, boxShadow: '0 2px 8px #e5d8fa', whiteSpace: 'nowrap', textAlign: 'center', letterSpacing: 1 }}>
                       Cancelar
                     </button>
                   </div>
@@ -425,13 +830,19 @@ function VistaProyectos({ proyectos, onAgregar, onVerAvances, cargando, error, c
                 <>
                   <strong>{proy.nombre}</strong>
                   {proy.archivo_url && (
-                    <div style={{ margin: '12px 0' }}>
+                    <div style={{ margin: '16px 0', display: 'flex', justifyContent: 'center' }}>
                       {proy.archivo_url.match(/\.(jpg|jpeg|png|gif|bmp|png)$/i) ? (
-                        <img src={proy.archivo_url} alt="Imagen proyecto" style={{ maxWidth: '350px', maxHeight: '350px', borderRadius: 8 }} />
+                        <img
+                          src={proy.archivo_url}
+                          alt="Imagen proyecto"
+                          style={{ maxWidth: 340, maxHeight: 180, borderRadius: 14, cursor: 'zoom-in', boxShadow: '0 2px 12px #a77ff288', objectFit: 'cover', background: '#faf8ff' }}
+                          onClick={() => setImagenModal({ url: proy.archivo_url, alt: proy.nombre || 'Imagen proyecto' })}
+                          title="Ver grande"
+                        />
                       ) : proy.archivo_url.match(/\.(mp4|webm|ogg)$/i) ? (
-                        <video src={proy.archivo_url} controls style={{ maxWidth: '200px', maxHeight: '200px', borderRadius: 8 }} />
+                        <video src={proy.archivo_url} controls style={{ maxWidth: 340, maxHeight: 180, borderRadius: 14, boxShadow: '0 2px 12px #a77ff288', background: '#faf8ff' }} />
                       ) : (
-                        <a href={proy.archivo_url} target="_blank" rel="noopener noreferrer">Ver documento</a>
+                        <a href={proy.archivo_url} target="_blank" rel="noopener noreferrer" style={{ color: '#a77ff2', fontWeight: 600, textDecoration: 'underline', fontSize: 16 }}>Ver documento</a>
                       )}
                     </div>
                   )}
@@ -487,11 +898,32 @@ function VistaAvances({ proyecto, onVolver, clienteAuth }) {
   const [descripcion, setDescripcion] = useState('')
   const [autor, setAutor] = useState('')
   const [archivo, setArchivo] = useState(null)
+  const [archivoPreview, setArchivoPreview] = useState(null)
   const [agregando, setAgregando] = useState(false)
   const [editandoId, setEditandoId] = useState(null)
   const [editDescripcion, setEditDescripcion] = useState('')
   const [editAutor, setEditAutor] = useState('')
   const [editArchivo, setEditArchivo] = useState(null)
+  const [editArchivoPreview, setEditArchivoPreview] = useState(null)
+  function handleArchivoChange(e) {
+    const file = e.target.files[0];
+    setArchivo(file);
+    if (file) {
+      setArchivoPreview(URL.createObjectURL(file));
+    } else {
+      setArchivoPreview(null);
+    }
+  }
+
+  function handleEditArchivoChange(e) {
+    const file = e.target.files[0];
+    setEditArchivo(file);
+    if (file) {
+      setEditArchivoPreview(URL.createObjectURL(file));
+    } else {
+      setEditArchivoPreview(null);
+    }
+  }
   const [cargando, setCargando] = useState(false)
   const [error, setError] = useState(null)
   const [erroresForm, setErroresForm] = useState({})
@@ -550,6 +982,7 @@ function VistaAvances({ proyecto, onVolver, clienteAuth }) {
     setDescripcion('')
     setAutor('')
     setArchivo(null)
+    setArchivoPreview(null)
     await obtenerAvances()
     setAgregando(false)
   }
@@ -612,6 +1045,7 @@ function VistaAvances({ proyecto, onVolver, clienteAuth }) {
     setEditDescripcion('')
     setEditAutor('')
     setEditArchivo(null)
+    setEditArchivoPreview(null)
     await obtenerAvances()
   }
 
@@ -619,6 +1053,8 @@ function VistaAvances({ proyecto, onVolver, clienteAuth }) {
     setEditandoId(null)
     setEditDescripcion('')
     setEditAutor('')
+    setEditArchivo(null)
+    setEditArchivoPreview(null)
   }
 
 
@@ -628,28 +1064,37 @@ function VistaAvances({ proyecto, onVolver, clienteAuth }) {
       <h2 style={{ color: '#a77ff2', marginBottom: 20, fontWeight: 700 }}>Avances de: {proyecto.nombre}</h2>
       {/* Filtro de seleccionar proyecto eliminado */}
       {clienteAuth && (
-        <form className="mei-upload-form" onSubmit={agregarAvance} style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
+        <form className="mei-upload-form" onSubmit={agregarAvance} style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 32, background: '#fff', borderRadius: 18, boxShadow: '0 2px 12px #e5d8fa', padding: '32px 28px 24px 28px', border: '1.5px solid #e5d8fa', maxWidth: 520, marginLeft: 'auto', marginRight: 'auto', alignItems: 'center' }}>
+          <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 8 }}>
+            {archivoPreview && (
+              archivo && archivo.type.startsWith('image/') ? (
+                <img src={archivoPreview} alt="Previsualización" style={{ maxWidth: 320, maxHeight: 180, borderRadius: 12, boxShadow: '0 2px 12px #a77ff288', marginBottom: 8, objectFit: 'cover', background: '#faf8ff' }} />
+              ) : archivo && archivo.type.startsWith('video/') ? (
+                <video src={archivoPreview} controls style={{ maxWidth: 320, maxHeight: 180, borderRadius: 12, boxShadow: '0 2px 12px #a77ff288', marginBottom: 8, background: '#faf8ff' }} />
+              ) : null
+            )}
+            <label style={{ display: 'inline-block', background: '#f7d6e0', color: '#a77ff2', borderRadius: 8, padding: '10px 22px', fontWeight: 700, fontSize: 15, cursor: 'pointer', marginBottom: 0, boxShadow: '0 1px 4px #e5d8fa', border: '1.5px solid #e5d8fa' }}>
+              <span>Seleccionar imagen o video</span>
+              <input type="file" accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt" onChange={handleArchivoChange} style={{ display: 'none' }} />
+            </label>
+          </div>
           <textarea
             placeholder="Descripción del avance"
             value={descripcion}
             onChange={e => setDescripcion(e.target.value)}
-            style={{ padding: 10, borderRadius: 6, border: '1px solid #ccc', fontSize: 16, minHeight: 60 }}
+            style={{ padding: 12, borderRadius: 8, border: '1.5px solid #e5d8fa', fontSize: 16, minHeight: 60, background: '#faf8ff', marginBottom: 2, width: '100%' }}
           />
-          {erroresForm.descripcion && <div style={{ color: 'red', marginBottom: 4 }}>{erroresForm.descripcion}</div>}
+          {erroresForm.descripcion && <div style={{ color: 'red', marginBottom: 4, fontWeight: 600 }}>{erroresForm.descripcion}</div>}
           <input
             type="text"
             placeholder="Autor (opcional)"
             value={autor}
             onChange={e => setAutor(e.target.value)}
-            style={{ padding: 10, borderRadius: 6, border: '1px solid #ccc', fontSize: 16 }}
+            style={{ padding: 12, borderRadius: 8, border: '1.5px solid #e5d8fa', fontSize: 16, background: '#faf8ff', marginBottom: 2, width: '100%' }}
           />
-          <input
-            type="file"
-            accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"
-            onChange={e => setArchivo(e.target.files[0])}
-            style={{ marginTop: 8, marginBottom: 8 }}
-          />
-          <button type="submit" disabled={agregando} style={{ background: '#a77ff2', color: '#fff', border: 'none', borderRadius: 6, padding: '10px 0', fontWeight: 600, fontSize: 16 }}>
+          <button type="submit" disabled={agregando} style={{
+            background: '#a77ff2', color: '#fff', border: 'none', borderRadius: 8, padding: '12px 0', fontWeight: 700, fontSize: 17, marginTop: 8, boxShadow: '0 2px 8px #e5d8fa', letterSpacing: 1, transition: 'background 0.2s', textAlign: 'center', width: '100%'
+          }}>
             Agregar avance
           </button>
         </form>
@@ -661,34 +1106,39 @@ function VistaAvances({ proyecto, onVolver, clienteAuth }) {
           <li key={av.id} className="mei-avance-item" style={{ background: '#faf8ff', borderRadius: 10, marginBottom: 18, boxShadow: '0 1px 6px #eee', padding: '5vw 4vw', display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap', minWidth: 0 }}>
             <div className="mei-avance-desc" style={{ flex: 1, minWidth: 0 }}>
               {editandoId === av.id ? (
-                <div style={{ background: '#f0eaff', borderRadius: 10, padding: '18px 12px', marginBottom: 8, boxShadow: '0 1px 4px #e5d8fa', display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div style={{ background: '#f0eaff', borderRadius: 14, padding: '22px 16px', marginBottom: 8, boxShadow: '0 2px 8px #e5d8fa', display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 500 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'center' }}>
+                    {editArchivoPreview && (
+                      editArchivo && editArchivo.type.startsWith('image/') ? (
+                        <img src={editArchivoPreview} alt="Previsualización" style={{ maxWidth: 320, maxHeight: 180, borderRadius: 12, boxShadow: '0 2px 12px #a77ff288', marginBottom: 8, objectFit: 'cover', background: '#faf8ff' }} />
+                      ) : editArchivo && editArchivo.type.startsWith('video/') ? (
+                        <video src={editArchivoPreview} controls style={{ maxWidth: 320, maxHeight: 180, borderRadius: 12, boxShadow: '0 2px 12px #a77ff288', marginBottom: 8, background: '#faf8ff' }} />
+                      ) : null
+                    )}
+                    <label style={{ display: 'inline-block', background: '#f7d6e0', color: '#a77ff2', borderRadius: 8, padding: '10px 22px', fontWeight: 700, fontSize: 15, cursor: 'pointer', marginBottom: 0, boxShadow: '0 1px 4px #e5d8fa', border: '1.5px solid #e5d8fa' }}>
+                      <span>Seleccionar imagen o video</span>
+                      <input type="file" accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt" onChange={handleEditArchivoChange} style={{ display: 'none' }} />
+                    </label>
                     <textarea
                       value={editDescripcion}
                       onChange={e => setEditDescripcion(e.target.value)}
-                      style={{ padding: 8, borderRadius: 6, border: '1px solid #ccc', fontSize: 15, minHeight: 50 }}
+                      style={{ padding: 12, borderRadius: 8, border: '1.5px solid #e5d8fa', fontSize: 16, minHeight: 50, background: '#faf8ff', marginBottom: 2, width: '100%' }}
                       placeholder="Descripción del avance"
                     />
-                    {erroresEdit.descripcion && <div style={{ color: 'red', marginBottom: 4 }}>{erroresEdit.descripcion}</div>}
+                    {erroresEdit.descripcion && <div style={{ color: 'red', marginBottom: 4, fontWeight: 600 }}>{erroresEdit.descripcion}</div>}
                     <input
                       type="text"
                       value={editAutor}
                       onChange={e => setEditAutor(e.target.value)}
-                      style={{ padding: 8, borderRadius: 6, border: '1px solid #ccc', fontSize: 15 }}
+                      style={{ padding: 12, borderRadius: 8, border: '1.5px solid #e5d8fa', fontSize: 16, background: '#faf8ff', marginBottom: 2, width: '100%' }}
                       placeholder="Autor (opcional)"
                     />
-                    <input
-                      type="file"
-                      accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"
-                      onChange={e => setEditArchivo(e.target.files[0])}
-                      style={{ marginTop: 8, marginBottom: 8 }}
-                    />
                   </div>
-                  <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 8 }}>
-                    <button className="mei-ver-todos-btn" onClick={() => guardarEdicion(av.id)} disabled={!editDescripcion} style={{ background: '#a77ff2', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 24px', fontWeight: 600, fontSize: 15, boxShadow: '0 1px 2px #e5d8fa' }}>
+                  <div style={{ display: 'flex', gap: 14, justifyContent: 'flex-end', marginTop: 10 }}>
+                    <button className="mei-ver-todos-btn" onClick={() => guardarEdicion(av.id)} disabled={!editDescripcion} style={{ background: '#a77ff2', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 28px', minWidth: 90, fontWeight: 700, fontSize: 16, boxShadow: '0 2px 8px #e5d8fa', textAlign: 'center', letterSpacing: 1 }}>
                       Guardar
                     </button>
-                    <button className="mei-delete-btn" onClick={cancelarEdicion} style={{ background: '#f7d6e0', color: '#a77ff2', border: 'none', borderRadius: 6, padding: '8px 24px', minWidth: 90, fontWeight: 600, fontSize: 15, boxShadow: '0 1px 2px #e5d8fa', whiteSpace: 'nowrap' }}>
+                    <button className="mei-delete-btn" onClick={cancelarEdicion} style={{ background: '#f7d6e0', color: '#a77ff2', border: 'none', borderRadius: 8, padding: '', minWidth: 90, fontWeight: 700, fontSize: 16, boxShadow: '0 2px 8px #e5d8fa', whiteSpace: 'nowrap', textAlign: 'center', letterSpacing: 1 }}>
                       Cancelar
                     </button>
                   </div>
@@ -700,7 +1150,13 @@ function VistaAvances({ proyecto, onVolver, clienteAuth }) {
                   {av.archivo_url && (
                     <div style={{ marginTop: 8 }}>
                       {av.archivo_url.match(/\.(jpg|jpeg|png|gif|bmp)$/i) ? (
-                        <img src={av.archivo_url} alt="Imagen avance" style={{ maxWidth: '350px', maxHeight: '350px' }} />
+                        <img
+                          src={av.archivo_url}
+                          alt="Imagen avance"
+                          style={{ maxWidth: '350px', maxHeight: '350px', borderRadius: 8, cursor: 'zoom-in' }}
+                          onClick={() => setImagenModal({ url: av.archivo_url, alt: av.descripcion || 'Imagen avance' })}
+                          title="Ver grande"
+                        />
                       ) : av.archivo_url.match(/\.(mp4|webm|ogg)$/i) ? (
                         <video src={av.archivo_url} controls style={{ maxWidth: '200px', maxHeight: '200px' }} />
                       ) : (
