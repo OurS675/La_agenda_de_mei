@@ -821,7 +821,7 @@ function VistaProyectos({ proyectos, onAgregar, onVerAvances, cargando, error, c
                     <button className="mei-ver-todos-btn" onClick={() => guardarEdicion(proy.id)} disabled={!editNombre} style={{ background: '#a77ff2', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 28px', minWidth: 90, fontWeight: 700, fontSize: 16, boxShadow: '0 2px 8px #e5d8fa', textAlign: 'center', letterSpacing: 1 }}>
                       Guardar
                     </button>
-                    <button className="mei-delete-btn" onClick={cancelarEdicion} style={{ background: '#f7d6e0', color: '#a77ff2', border: 'none', borderRadius: 8, padding: '', minWidth: 90, fontWeight: 700, fontSize: 16, boxShadow: '0 2px 8px #e5d8fa', whiteSpace: 'nowrap', textAlign: 'center', letterSpacing: 1 }}>
+                    <button className="mei-delete-btn" onClick={cancelarEdicion} style={{ background: '#f7d6e0', color: '#a77ff2', border: 'none', borderRadius: 8, padding: '5px 5px', minWidth: 90, fontWeight: 700, fontSize: 16, boxShadow: '0 2px 8px #e5d8fa', whiteSpace: 'nowrap', textAlign: 'center', letterSpacing: 1 }}>
                       Cancelar
                     </button>
                   </div>
@@ -863,14 +863,47 @@ function VistaProyectos({ proyectos, onAgregar, onVerAvances, cargando, error, c
                             Swal.fire('Error', error.message, 'error');
                           }
                         }}
-                        style={{ marginLeft: 8 }}
+                        style={{
+                          marginLeft: 8,
+                          padding: '8px 18px 8px 12px',
+                          borderRadius: 18,
+                          border: '1.5px solid #a77ff2',
+                          background: '#f7d6e0',
+                          color: '#a77ff2',
+                          fontWeight: 700,
+                          fontSize: 15,
+                          boxShadow: '0 1px 4px #e5d8fa',
+                          outline: 'none',
+                          cursor: 'pointer',
+                          appearance: 'none',
+                          WebkitAppearance: 'none',
+                          MozAppearance: 'none',
+                          minWidth: 150,
+                          transition: 'border 0.2s, box-shadow 0.2s',
+                        }}
                       >
-                        <option value="activo">En progreso</option>
-                        <option value="pausado">Pausado</option>
-                        <option value="finalizado">Finalizado</option>
-                        <option value="cancelado">Cancelado</option>
+                        <option value="activo" style={{ color: '#a77ff2' }}>🟢 En progreso</option>
+                        <option value="pausado" style={{ color: '#f7b731' }}>⏸️ Pausado</option>
+                        <option value="finalizado" style={{ color: '#4cd137' }}>🏁 Finalizado</option>
+                        <option value="cancelado" style={{ color: '#eb2f06' }}>❌ Cancelado</option>
                       </select>
-                    ) : (proy.estado || 'activo')}
+                    ) : (
+                      <span style={{
+                        display: 'inline-block',
+                        padding: '6px 16px',
+                        borderRadius: 14,
+                        background: proy.estado === 'finalizado' ? '#e0f7e9' : proy.estado === 'pausado' ? '#fffbe0' : proy.estado === 'cancelado' ? '#ffe0e0' : '#f7d6e0',
+                        color: proy.estado === 'finalizado' ? '#4cd137' : proy.estado === 'pausado' ? '#f7b731' : proy.estado === 'cancelado' ? '#eb2f06' : '#a77ff2',
+                        fontWeight: 700,
+                        fontSize: 15,
+                        minWidth: 120,
+                        textAlign: 'center',
+                        boxShadow: '0 1px 4px #e5d8fa',
+                        letterSpacing: 1,
+                      }}>
+                        {proy.estado === 'finalizado' ? '🏁 Finalizado' : proy.estado === 'pausado' ? '⏸️ Pausado' : proy.estado === 'cancelado' ? '❌ Cancelado' : '🟢 En progreso'}
+                      </span>
+                    )}
                     <br />
                     Creado: {proy.fecha_creacion ? new Date(proy.fecha_creacion).toLocaleString() : 'Sin fecha'}
                   </div>
@@ -883,7 +916,7 @@ function VistaProyectos({ proyectos, onAgregar, onVerAvances, cargando, error, c
             {clienteAuth && editandoId !== proy.id && (
               <div style={{ display: 'flex', flexDirection: 'row', gap: 10, alignItems: 'center', justifyContent: 'flex-end', minWidth: 120, marginTop: 8 }}>
                 <button className="mei-edit-btn" onClick={() => iniciarEdicion(proy)} title="Editar" style={{ background: '#a77ff2', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 20px', fontWeight: 600, fontSize: 15, boxShadow: '0 1px 2px #e5d8fa', minWidth: 90, textAlign: '' }}>Editar</button>
-                <button className="mei-delete-btn" onClick={() => eliminarProyecto(proy.id)} title="Eliminar" style={{ background: '#f7d6e0', color: '#a77ff2', border: 'none', borderRadius: 6, padding: '', fontWeight: 600, fontSize: 15, boxShadow: '0 1px 2px #e5d8fa', minWidth: 50, textAlign: 'center' }}>🗑️</button>
+                <button className="mei-delete-btn" onClick={() => eliminarProyecto(proy.id)} title="Eliminar" style={{ background: '#f7d6e0', color: '#a77ff2', border: 'none', borderRadius: 6, padding: '5px, 5px', fontWeight: 600, fontSize: 15, boxShadow: '0 1px 2px #e5d8fa', minWidth: 50, textAlign: 'center' }}>🗑️</button>
               </div>
             )}
           </li>
@@ -1138,7 +1171,7 @@ function VistaAvances({ proyecto, onVolver, clienteAuth }) {
                     <button className="mei-ver-todos-btn" onClick={() => guardarEdicion(av.id)} disabled={!editDescripcion} style={{ background: '#a77ff2', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 28px', minWidth: 90, fontWeight: 700, fontSize: 16, boxShadow: '0 2px 8px #e5d8fa', textAlign: 'center', letterSpacing: 1 }}>
                       Guardar
                     </button>
-                    <button className="mei-delete-btn" onClick={cancelarEdicion} style={{ background: '#f7d6e0', color: '#a77ff2', border: 'none', borderRadius: 8, padding: '', minWidth: 90, fontWeight: 700, fontSize: 16, boxShadow: '0 2px 8px #e5d8fa', whiteSpace: 'nowrap', textAlign: 'center', letterSpacing: 1 }}>
+                    <button className="mei-delete-btn" onClick={cancelarEdicion} style={{ background: '#f7d6e0', color: '#a77ff2', border: 'none', borderRadius: 8, padding: '5px 5px', minWidth: 90, fontWeight: 700, fontSize: 16, boxShadow: '0 2px 8px #e5d8fa', whiteSpace: 'nowrap', textAlign: 'center', letterSpacing: 1 }}>
                       Cancelar
                     </button>
                   </div>
@@ -1174,7 +1207,7 @@ function VistaAvances({ proyecto, onVolver, clienteAuth }) {
             {clienteAuth && editandoId !== av.id && (
               <div style={{ display: 'flex', flexDirection: 'row', gap: 10, alignItems: 'center', justifyContent: 'flex-end', minWidth: 120, marginTop: 8 }}>
                 <button className="mei-edit-btn" onClick={() => iniciarEdicion(av)} title="Editar" style={{ background: '#a77ff2', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 20px', fontWeight: 600, fontSize: 15, boxShadow: '0 1px 2px #e5d8fa', minWidth: 90 }}>Editar</button>
-                <button className="mei-delete-btn" onClick={() => eliminarAvance(av.id)} title="Eliminar" style={{ background: '#f7d6e0', color: '#a77ff2', border: 'none', borderRadius: 6, padding: '', fontWeight: 600, fontSize: 15, boxShadow: '0 1px 2px #e5d8fa', minWidth: 50 }}>🗑️</button>
+                <button className="mei-delete-btn" onClick={() => eliminarAvance(av.id)} title="Eliminar" style={{ background: '#f7d6e0', color: '#a77ff2', border: 'none', borderRadius: 6, padding: '5px, 5px', fontWeight: 600, fontSize: 15, boxShadow: '0 1px 2px #e5d8fa', minWidth: 50 }}>🗑️</button>
               </div>
             )}
           </li>
