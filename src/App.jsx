@@ -6,7 +6,8 @@ import Swal from 'sweetalert2'
 const CLIENTE_PASSWORD = 'mei2024'
 
 function App() {
-  const [vista, setVista] = useState('proyectos') // 'proyectos' o 'avances'
+  const [vista, setVista] = useState('proyectos') // 'proyectos', 'avances' o 'cliente'
+  const [filtroVista, setFiltroVista] = useState('proyectos') // 'proyectos' o 'avances'
   const [proyectos, setProyectos] = useState([])
   const [proyectoSeleccionado, setProyectoSeleccionado] = useState(null)
   const [cargando, setCargando] = useState(false)
@@ -14,6 +15,20 @@ function App() {
   const [clienteAuth, setClienteAuth] = useState(false)
   const [showLogin, setShowLogin] = useState(false)
   const [loginError, setLoginError] = useState(null)
+
+  // Recargar proyectos al iniciar sesión del cliente
+  useEffect(() => {
+    if (clienteAuth) {
+      obtenerProyectos();
+    }
+  }, [clienteAuth]);
+
+  // Recargar proyectos al cambiar el filtro a 'proyectos'
+  useEffect(() => {
+    if (filtroVista === 'proyectos') {
+      obtenerProyectos();
+    }
+  }, [filtroVista]);
 
   useEffect(() => {
     obtenerProyectos()
@@ -26,6 +41,7 @@ function App() {
       .from('proyectos')
       .select('*')
       .order('fecha_creacion', { ascending: false })
+    console.log('Respuesta obtenerProyectos:', { data, error });
     if (error) setError(error.message)
     else setProyectos(data)
     setCargando(false)
@@ -42,8 +58,7 @@ function App() {
   }
 
   function handleClienteClick() {
-    setShowLogin(true)
-    setLoginError(null)
+    setVista('cliente')
   }
 
   function handleLogin(password) {
@@ -62,6 +77,13 @@ function App() {
     setLoginError(null)
   }
 
+  function handleAvancesClick() {
+    if (!proyectoSeleccionado && proyectos.length > 0) {
+      setProyectoSeleccionado(proyectos[0]);
+    }
+    setVista('avances');
+  }
+
   return (
     <div className="mei-container">
       <header className="mei-header">
@@ -70,24 +92,61 @@ function App() {
           <button className={vista === 'proyectos' ? 'active' : ''} onClick={volverAProyectos} disabled={vista === 'proyectos'}>
             Proyectos
           </button>
-          <button className={vista === 'avances' ? 'active' : ''} onClick={() => setVista('avances')} disabled={vista === 'avances' || !proyectoSeleccionado}>
+          <button className={vista === 'avances' ? 'active' : ''} onClick={handleAvancesClick} disabled={vista === 'avances' || proyectos.length === 0}>
             Avances
           </button>
-          <button onClick={handleClienteClick} disabled={clienteAuth} style={{ marginLeft: 'auto' }}>
+          <button onClick={handleClienteClick} style={{ marginLeft: 'auto' }}>
             Cliente
           </button>
+          {!clienteAuth && (
+            <button className="login-btn" onClick={() => setShowLogin(true)}>
+              Iniciar sesión
+            </button>
+          )}
           {clienteAuth && (
             <button className="logout-btn" onClick={handleLogout}>
               Cerrar sesión
             </button>
           )}
         </nav>
+        {/* Filtro para cliente: proyectos o avances */}
+        {clienteAuth && vista !== 'cliente' && (
+          <div className="mei-filtro-avances" style={{ marginTop: 16 }}>
+            <label htmlFor="filtro-vista">Ver:</label>
+            <select id="filtro-vista" value={filtroVista} onChange={e => setFiltroVista(e.target.value)}>
+              <option value="proyectos">Proyectos</option>
+              <option value="avances">Avances</option>
+            </select>
+          </div>
+        )}
       </header>
       <main>
         {showLogin && (
           <LoginModal onLogin={handleLogin} error={loginError} onClose={() => setShowLogin(false)} />
         )}
-        {vista === 'proyectos' && (
+        {/* Mostrar según filtro */}
+        {clienteAuth && vista !== 'cliente' ? (
+          filtroVista === 'proyectos' ? (
+            <VistaProyectos
+              proyectos={proyectos}
+              onAgregar={obtenerProyectos}
+              onVerAvances={irAAvances}
+              cargando={cargando}
+              error={error}
+              clienteAuth={clienteAuth}
+            />
+          ) : (
+            proyectoSeleccionado ? (
+              <VistaAvances
+                proyecto={proyectoSeleccionado}
+                onVolver={volverAProyectos}
+                clienteAuth={clienteAuth}
+              />
+            ) : (
+              <div style={{ marginTop: 32, textAlign: 'center' }}>Selecciona un proyecto para ver sus avances.</div>
+            )
+          )
+        ) : vista === 'proyectos' ? (
           <VistaProyectos
             proyectos={proyectos}
             onAgregar={obtenerProyectos}
@@ -96,19 +155,35 @@ function App() {
             error={error}
             clienteAuth={clienteAuth}
           />
-        )}
-        {vista === 'avances' && proyectoSeleccionado && (
+        ) : vista === 'avances' && proyectoSeleccionado ? (
           <VistaAvances
             proyecto={proyectoSeleccionado}
             onVolver={volverAProyectos}
             clienteAuth={clienteAuth}
           />
-        )}
+        ) : vista === 'cliente' ? (
+          <VistaCliente onVolver={volverAProyectos} />
+        ) : null}
       </main>
       <footer className="mei-footer">
         <span>© {new Date().getFullYear()} La Agenda de Mei</span>
       </footer>
     </div>
+  )
+// Apartado de información del cliente
+function VistaCliente({ onVolver }) {
+  return (
+    <section className="mei-section">
+      <button className="mei-ver-todos-btn" onClick={onVolver} style={{ marginBottom: 16 }}>&larr; Volver</button>
+      <h2>Información del Cliente</h2>
+      <div style={{ marginBottom: 16 }}>
+        <strong>Nombre:</strong> Mei<br />
+        <strong>Email:</strong> mei@email.com<br />
+        <strong>Teléfono:</strong> 123-456-7890<br />
+        <strong>Notas:</strong> Aquí puedes agregar información relevante del cliente, como instrucciones, links, etc.
+      </div>
+      {/* Puedes personalizar este apartado con más datos o funcionalidades */}
+    </section>
   )
 }
 
@@ -141,6 +216,7 @@ function LoginModal({ onLogin, error, onClose }) {
 function VistaProyectos({ proyectos, onAgregar, onVerAvances, cargando, error, clienteAuth }) {
   const [nombre, setNombre] = useState('')
   const [descripcion, setDescripcion] = useState('')
+  const [archivo, setArchivo] = useState(null)
   const [agregando, setAgregando] = useState(false)
   const [editandoId, setEditandoId] = useState(null)
   const [editNombre, setEditNombre] = useState('')
@@ -151,33 +227,66 @@ function VistaProyectos({ proyectos, onAgregar, onVerAvances, cargando, error, c
     e.preventDefault()
     setAgregando(true)
     setErrorLocal(null)
-    const { error } = await supabase
+    let archivoUrl = null
+    if (archivo) {
+      // Limpiar el nombre del archivo para evitar errores de key
+      const cleanName = archivo.name
+        .normalize('NFD').replace(/[^\w.\-]+/g, '_')
+        .replace(/_+/g, '_');
+      const nombreArchivo = `proyecto_${Date.now()}_${cleanName}`;
+      const { data, error: uploadError } = await supabase.storage.from('imagenes').upload(nombreArchivo, archivo);
+      console.log('Resultado upload archivo:', { data, uploadError });
+      if (uploadError) {
+        setErrorLocal('Error al subir archivo: ' + uploadError.message);
+        setAgregando(false);
+        return;
+      }
+      archivoUrl = supabase.storage.from('imagenes').getPublicUrl(nombreArchivo).data.publicUrl;
+      console.log('URL pública del archivo:', archivoUrl);
+    }
+    const { data: insertData, error } = await supabase
       .from('proyectos')
-      .insert([{ nombre, descripcion }])
+      .insert([{ nombre, descripcion, archivo_url: archivoUrl }]);
+    console.log('Resultado insert proyecto:', { insertData, error });
     if (error) setErrorLocal(error.message)
     else Swal.fire('¡Proyecto agregado!', '', 'success')
     setNombre('')
     setDescripcion('')
-    await onAgregar()
+    setArchivo(null)
+    setTimeout(() => { onAgregar(); }, 300); // Recarga la lista tras agregar
     setAgregando(false)
   }
 
   async function eliminarProyecto(id) {
     const result = await Swal.fire({
       title: '¿Eliminar proyecto?',
-      text: 'Esto eliminará también todos sus avances.',
+      text: 'Esto eliminará también todos sus avances y el archivo asociado.',
       icon: 'warning',
       showCancelButton: true,
       confirmButtonText: 'Sí, eliminar',
       cancelButtonText: 'Cancelar',
       confirmButtonColor: '#a77ff2',
       cancelButtonColor: '#f7d6e0',
-    })
-    if (!result.isConfirmed) return
-    const { error } = await supabase.from('proyectos').delete().eq('id', id)
-    if (error) Swal.fire('Error', error.message, 'error')
-    else Swal.fire('Eliminado', 'Proyecto eliminado', 'success')
-    await onAgregar()
+    });
+    if (!result.isConfirmed) return;
+    // Buscar el proyecto para obtener el archivo
+    const { data: proyectoData } = await supabase.from('proyectos').select('archivo_url').eq('id', id).single();
+    if (proyectoData && proyectoData.archivo_url) {
+      // Extraer el path relativo del archivo desde el archivo_url
+      // Ejemplo: https://.../storage/v1/object/public/imagenes/proyecto_1234_nombre.jpg
+      const match = proyectoData.archivo_url.match(/\/storage\/v1\/object\/public\/imagenes\/(.+)$/);
+      const pathRelativo = match ? match[1] : null;
+      if (pathRelativo) {
+        const { error: storageError } = await supabase.storage.from('imagenes').remove([pathRelativo]);
+        if (storageError) {
+          console.warn('No se pudo eliminar el archivo del Storage:', storageError.message);
+        }
+      }
+    }
+    const { error } = await supabase.from('proyectos').delete().eq('id', id);
+    if (error) Swal.fire('Error', error.message, 'error');
+    else Swal.fire('Eliminado', 'Proyecto eliminado', 'success');
+    await onAgregar();
   }
 
   function iniciarEdicion(proy) {
@@ -208,6 +317,7 @@ function VistaProyectos({ proyectos, onAgregar, onVerAvances, cargando, error, c
   return (
     <section className="mei-section">
       <h2>Proyectos</h2>
+      {/* Formulario solo para el cliente autenticado */}
       {clienteAuth && (
         <form className="mei-upload-form" onSubmit={agregarProyecto}>
           <input
@@ -222,6 +332,12 @@ function VistaProyectos({ proyectos, onAgregar, onVerAvances, cargando, error, c
             value={descripcion}
             onChange={e => setDescripcion(e.target.value)}
           />
+          <input
+            type="file"
+            accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"
+            onChange={e => setArchivo(e.target.files[0])}
+            style={{ marginTop: 8, marginBottom: 8 }}
+          />
           <button type="submit" disabled={agregando || !nombre}>
             Agregar proyecto
           </button>
@@ -230,7 +346,17 @@ function VistaProyectos({ proyectos, onAgregar, onVerAvances, cargando, error, c
       {error && <div style={{ color: 'red' }}>{error}</div>}
       {errorLocal && <div style={{ color: 'red' }}>{errorLocal}</div>}
       {cargando && <div>Cargando...</div>}
+      {/* Mostrar proyectos subidos por el cliente y todos los proyectos */}
       <ul>
+        {proyectos.length === 0 && (
+          <li style={{ color: '#a77ff2', textAlign: 'center', marginTop: 24 }}>
+            No hay proyectos registrados.
+            <br />
+            <span style={{ fontSize: '0.9em', color: '#888' }}>
+              (¿No aparecen proyectos? Revisa la consola del navegador para ver detalles de la respuesta de Supabase)
+            </span>
+          </li>
+        )}
         {proyectos.map(proy => (
           <li key={proy.id} className="mei-avance-item">
             <div className="mei-avance-desc">
@@ -260,8 +386,19 @@ function VistaProyectos({ proyectos, onAgregar, onVerAvances, cargando, error, c
                   <div>{proy.descripcion}</div>
                   <div className="mei-avance-date">
                     Estado: {proy.estado || 'activo'}<br />
-                    Creado: {new Date(proy.fecha_creacion).toLocaleString()}
+                    Creado: {proy.fecha_creacion ? new Date(proy.fecha_creacion).toLocaleString() : 'Sin fecha'}
                   </div>
+                  {proy.archivo_url && (
+                    <div style={{ marginTop: 8 }}>
+                      {proy.archivo_url.match(/\.(jpg|jpeg|png|gif|bmp|png)$/i) ? (
+                        <img src={proy.archivo_url} alt="Imagen proyecto" style={{ maxWidth: '200px', maxHeight: '200px' }} />
+                      ) : proy.archivo_url.match(/\.(mp4|webm|ogg)$/i) ? (
+                        <video src={proy.archivo_url} controls style={{ maxWidth: '200px', maxHeight: '200px' }} />
+                      ) : (
+                        <a href={proy.archivo_url} target="_blank" rel="noopener noreferrer">Ver documento</a>
+                      )}
+                    </div>
+                  )}
                 </>
               )}
             </div>
@@ -285,10 +422,12 @@ function VistaAvances({ proyecto, onVolver, clienteAuth }) {
   const [avances, setAvances] = useState([])
   const [descripcion, setDescripcion] = useState('')
   const [autor, setAutor] = useState('')
+  const [archivo, setArchivo] = useState(null)
   const [agregando, setAgregando] = useState(false)
   const [editandoId, setEditandoId] = useState(null)
   const [editDescripcion, setEditDescripcion] = useState('')
   const [editAutor, setEditAutor] = useState('')
+  const [editArchivo, setEditArchivo] = useState(null)
   const [cargando, setCargando] = useState(false)
   const [error, setError] = useState(null)
 
@@ -314,13 +453,29 @@ function VistaAvances({ proyecto, onVolver, clienteAuth }) {
     e.preventDefault()
     setAgregando(true)
     setError(null)
+    let archivoUrl = null
+    if (archivo) {
+      // Limpiar el nombre del archivo para evitar errores de key
+      const cleanName = archivo.name
+        .normalize('NFD').replace(/[^\w.\-]+/g, '_')
+        .replace(/_+/g, '_');
+      const nombreArchivo = `${proyecto.id}_${Date.now()}_${cleanName}`;
+      const { data, error: uploadError } = await supabase.storage.from('imagenes').upload(nombreArchivo, archivo);
+      if (uploadError) {
+        setError('Error al subir archivo: ' + uploadError.message);
+        setAgregando(false);
+        return;
+      }
+      archivoUrl = supabase.storage.from('imagenes').getPublicUrl(nombreArchivo).data.publicUrl;
+    }
     const { error } = await supabase
       .from('avances')
-      .insert([{ proyecto_id: proyecto.id, descripcion, autor }])
+      .insert([{ proyecto_id: proyecto.id, descripcion, autor, archivo_url: archivoUrl }])
     if (error) setError(error.message)
     else Swal.fire('¡Avance agregado!', '', 'success')
     setDescripcion('')
     setAutor('')
+    setArchivo(null)
     await obtenerAvances()
     setAgregando(false)
   }
@@ -346,18 +501,37 @@ function VistaAvances({ proyecto, onVolver, clienteAuth }) {
     setEditandoId(av.id)
     setEditDescripcion(av.descripcion)
     setEditAutor(av.autor || '')
+    setEditArchivo(null)
   }
 
   async function guardarEdicion(id) {
+    let archivoUrl = null
+    if (editArchivo) {
+      // Limpiar el nombre del archivo para evitar errores de key
+      const cleanName = editArchivo.name
+        .normalize('NFD').replace(/[^\w.\-]+/g, '_')
+        .replace(/_+/g, '_');
+      const nombreArchivo = `${proyecto.id}_${Date.now()}_${cleanName}`;
+      const { data, error: uploadError } = await supabase.storage.from('imagenes').upload(nombreArchivo, editArchivo);
+      if (uploadError) {
+        Swal.fire('Error', 'Error al subir archivo: ' + uploadError.message, 'error');
+        return;
+      }
+      archivoUrl = supabase.storage.from('imagenes').getPublicUrl(nombreArchivo).data.publicUrl;
+    }
+    const updateData = archivoUrl
+      ? { descripcion: editDescripcion, autor: editAutor, archivo_url: archivoUrl }
+      : { descripcion: editDescripcion, autor: editAutor }
     const { error } = await supabase
       .from('avances')
-      .update({ descripcion: editDescripcion, autor: editAutor })
+      .update(updateData)
       .eq('id', id)
     if (error) Swal.fire('Error', error.message, 'error')
     else Swal.fire('Guardado', 'Avance actualizado', 'success')
     setEditandoId(null)
     setEditDescripcion('')
     setEditAutor('')
+    setEditArchivo(null)
     await obtenerAvances()
   }
 
@@ -367,10 +541,61 @@ function VistaAvances({ proyecto, onVolver, clienteAuth }) {
     setEditAutor('')
   }
 
+  // Selector de proyecto
+  const [proyectos, setProyectos] = useState([]);
+  useEffect(() => {
+    async function fetchProyectos() {
+      const { data } = await supabase.from('proyectos').select('*').order('fecha_creacion', { ascending: false });
+      setProyectos(data || []);
+    }
+    fetchProyectos();
+  }, []);
+
+  function handleProyectoChange(e) {
+    const id = Number(e.target.value);
+    const seleccionado = proyectos.find(p => p.id === id);
+    if (seleccionado) {
+      onVolver(); // Volver a proyectos y luego ir a avances del seleccionado
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('irAAvances', { detail: seleccionado }));
+      }, 0);
+    }
+  }
+
+  useEffect(() => {
+    function handleIrAAvances(e) {
+      if (typeof window.setProyectoSeleccionado === 'function') {
+        window.setProyectoSeleccionado(e.detail);
+      }
+    }
+    window.addEventListener('irAAvances', handleIrAAvances);
+    return () => window.removeEventListener('irAAvances', handleIrAAvances);
+  }, []);
+
+  useEffect(() => {
+    window.setProyectoSeleccionado = (p) => {
+      if (typeof onVolver === 'function') {
+        onVolver();
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('irAAvances', { detail: p }));
+        }, 0);
+      }
+    };
+    return () => { window.setProyectoSeleccionado = null; };
+  }, [onVolver]);
+
   return (
     <section className="mei-section">
       <button className="mei-ver-todos-btn" onClick={onVolver} style={{ marginBottom: 16 }}>&larr; Volver a proyectos</button>
       <h2>Avances de: {proyecto.nombre}</h2>
+      <div style={{ marginBottom: 16 }}>
+        <label htmlFor="proyecto-select"><strong>Seleccionar proyecto:</strong></label>
+        <select id="proyecto-select" value={proyecto.id} onChange={handleProyectoChange} style={{ marginLeft: 8 }}>
+          {proyectos.map(p => (
+            <option key={p.id} value={p.id}>{p.nombre}</option>
+          ))}
+        </select>
+      </div>
       {clienteAuth && (
         <form className="mei-upload-form" onSubmit={agregarAvance}>
           <textarea
@@ -384,6 +609,12 @@ function VistaAvances({ proyecto, onVolver, clienteAuth }) {
             placeholder="Autor (opcional)"
             value={autor}
             onChange={e => setAutor(e.target.value)}
+          />
+          <input
+            type="file"
+            accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"
+            onChange={e => setArchivo(e.target.files[0])}
+            style={{ marginTop: 8, marginBottom: 8 }}
           />
           <button type="submit" disabled={agregando || !descripcion}>
             Agregar avance
@@ -409,6 +640,12 @@ function VistaAvances({ proyecto, onVolver, clienteAuth }) {
                     onChange={e => setEditAutor(e.target.value)}
                     style={{ marginBottom: 8 }}
                   />
+                  <input
+                    type="file"
+                    accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"
+                    onChange={e => setEditArchivo(e.target.files[0])}
+                    style={{ marginTop: 8, marginBottom: 8 }}
+                  />
                   <button className="mei-ver-todos-btn" onClick={() => guardarEdicion(av.id)} disabled={!editDescripcion}>
                     Guardar
                   </button>
@@ -423,6 +660,17 @@ function VistaAvances({ proyecto, onVolver, clienteAuth }) {
                     {av.autor && <>Autor: {av.autor} <br /></>}
                     Fecha: {new Date(av.fecha).toLocaleString()}
                   </div>
+                  {av.archivo_url && (
+                    <div style={{ marginTop: 8 }}>
+                      {av.archivo_url.match(/\.(jpg|jpeg|png|gif|bmp)$/i) ? (
+                        <img src={av.archivo_url} alt="Imagen avance" style={{ maxWidth: '200px', maxHeight: '200px' }} />
+                      ) : av.archivo_url.match(/\.(mp4|webm|ogg)$/i) ? (
+                        <video src={av.archivo_url} controls style={{ maxWidth: '200px', maxHeight: '200px' }} />
+                      ) : (
+                        <a href={av.archivo_url} target="_blank" rel="noopener noreferrer">Ver documento</a>
+                      )}
+                    </div>
+                  )}
                 </>
               )}
             </div>
@@ -439,4 +687,5 @@ function VistaAvances({ proyecto, onVolver, clienteAuth }) {
   )
 }
 
-export default App 
+}
+export default App
