@@ -1,3 +1,29 @@
+.dropzone {
+  border: 2px dashed #a77ff2;
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+.dropzone.active {
+  background-color: #f7d6e0;
+}
+
+.dropzone p {
+  margin: 0;
+  color: #555;
+}
+
+.dropzone img {
+  max-width: 100%;
+  max-height: 200px;
+  border-radius: 8px;
+}
+
 .mei-container {
   max-width: 700px;
   margin: 2rem auto;
@@ -336,4 +362,4 @@ main {
   font-weight: 600;
   letter-spacing: 1px;
   font-family: 'Quicksand', cursive, sans-serif;
-} 
+}

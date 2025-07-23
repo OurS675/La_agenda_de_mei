@@ -192,12 +192,24 @@ function VistaProyectos({ proyectos, onAgregar, onVerAvances, cargando, error, c
   const [editNombre, setEditNombre] = useState('')
   const [editDescripcion, setEditDescripcion] = useState('')
   const [editEstado, setEditEstado] = useState('activo')
+  const [editArchivo, setEditArchivo] = useState(null)
   const [errorLocal, setErrorLocal] = useState(null)
+  const [erroresForm, setErroresForm] = useState({})
+  const [erroresEdit, setErroresEdit] = useState({})
 
   async function agregarProyecto(e) {
     e.preventDefault()
     setAgregando(true)
     setErrorLocal(null)
+    let errores = {}
+    if (!nombre.trim()) errores.nombre = 'El nombre es obligatorio.'
+    // Puedes agregar más validaciones aquí si lo deseas
+    if (Object.keys(errores).length > 0) {
+      setErroresForm(errores)
+      setAgregando(false)
+      return
+    }
+    setErroresForm({})
     let archivoUrl = null
     if (archivo) {
       // Limpiar el nombre del archivo para evitar errores de key
@@ -266,12 +278,37 @@ function VistaProyectos({ proyectos, onAgregar, onVerAvances, cargando, error, c
     setEditNombre(proy.nombre)
     setEditDescripcion(proy.descripcion)
     setEditEstado(proy.estado || 'activo')
+    setEditArchivo(null)
   }
 
   async function guardarEdicion(id) {
+    let errores = {}
+    if (!editNombre.trim()) errores.nombre = 'El nombre es obligatorio.'
+    if (Object.keys(errores).length > 0) {
+      setErroresEdit(errores)
+      return
+    }
+    setErroresEdit({})
+    let archivoUrl = null
+    if (editArchivo) {
+      // Limpiar el nombre del archivo para evitar errores de key
+      const cleanName = editArchivo.name
+        .normalize('NFD').replace(/[^\w.\-]+/g, '_')
+        .replace(/_+/g, '_');
+      const nombreArchivo = `proyecto_${Date.now()}_${cleanName}`;
+      const { data, error: uploadError } = await supabase.storage.from('imagenes').upload(nombreArchivo, editArchivo);
+      if (uploadError) {
+        Swal.fire('Error', 'Error al subir archivo: ' + uploadError.message, 'error');
+        return;
+      }
+      archivoUrl = supabase.storage.from('imagenes').getPublicUrl(nombreArchivo).data.publicUrl;
+    }
+    const updateData = archivoUrl
+      ? { nombre: editNombre, descripcion: editDescripcion, estado: editEstado, archivo_url: archivoUrl }
+      : { nombre: editNombre, descripcion: editDescripcion, estado: editEstado }
     const { error } = await supabase
       .from('proyectos')
-      .update({ nombre: editNombre, descripcion: editDescripcion, estado: editEstado })
+      .update(updateData)
       .eq('id', id)
     if (error) Swal.fire('Error', error.message, 'error')
     else Swal.fire('Guardado', 'Proyecto actualizado', 'success')
@@ -279,6 +316,7 @@ function VistaProyectos({ proyectos, onAgregar, onVerAvances, cargando, error, c
     setEditNombre('')
     setEditDescripcion('')
     setEditEstado('activo')
+    setEditArchivo(null)
     await onAgregar()
   }
 
@@ -286,6 +324,7 @@ function VistaProyectos({ proyectos, onAgregar, onVerAvances, cargando, error, c
     setEditandoId(null)
     setEditNombre('')
     setEditDescripcion('')
+    setEditArchivo(null)
   }
 
   return (
@@ -299,8 +338,8 @@ function VistaProyectos({ proyectos, onAgregar, onVerAvances, cargando, error, c
             placeholder="Nombre del proyecto"
             value={nombre}
             onChange={e => setNombre(e.target.value)}
-            required
           />
+          {erroresForm.nombre && <div style={{ color: 'red', marginBottom: 4 }}>{erroresForm.nombre}</div>}
           <textarea
             placeholder="Descripción"
             value={descripcion}
@@ -312,7 +351,7 @@ function VistaProyectos({ proyectos, onAgregar, onVerAvances, cargando, error, c
             onChange={e => setArchivo(e.target.files[0])}
             style={{ marginTop: 8, marginBottom: 8 }}
           />
-          <button type="submit" disabled={agregando || !nombre}>
+          <button type="submit" disabled={agregando}>
             Agregar proyecto
           </button>
         </form>
@@ -342,6 +381,7 @@ function VistaProyectos({ proyectos, onAgregar, onVerAvances, cargando, error, c
                     onChange={e => setEditNombre(e.target.value)}
                     style={{ marginBottom: 8 }}
                   />
+                  {erroresEdit.nombre && <div style={{ color: 'red', marginBottom: 4 }}>{erroresEdit.nombre}</div>}
                   <textarea
                     value={editDescripcion}
                     onChange={e => setEditDescripcion(e.target.value)}
@@ -357,6 +397,12 @@ function VistaProyectos({ proyectos, onAgregar, onVerAvances, cargando, error, c
                     <option value="finalizado">Finalizado</option>
                     <option value="cancelado">Cancelado</option>
                   </select>
+                  <input
+                    type="file"
+                    accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"
+                    onChange={e => setEditArchivo(e.target.files[0])}
+                    style={{ marginTop: 8, marginBottom: 8 }}
+                  />
                   <button className="mei-ver-todos-btn" onClick={() => guardarEdicion(proy.id)} disabled={!editNombre}>
                     Guardar
                   </button>
@@ -370,7 +416,7 @@ function VistaProyectos({ proyectos, onAgregar, onVerAvances, cargando, error, c
                   {proy.archivo_url && (
                     <div style={{ margin: '12px 0' }}>
                       {proy.archivo_url.match(/\.(jpg|jpeg|png|gif|bmp|png)$/i) ? (
-                        <img src={proy.archivo_url} alt="Imagen proyecto" style={{ maxWidth: '200px', maxHeight: '200px', borderRadius: 8 }} />
+                        <img src={proy.archivo_url} alt="Imagen proyecto" style={{ maxWidth: '350px', maxHeight: '350px', borderRadius: 8 }} />
                       ) : proy.archivo_url.match(/\.(mp4|webm|ogg)$/i) ? (
                         <video src={proy.archivo_url} controls style={{ maxWidth: '200px', maxHeight: '200px', borderRadius: 8 }} />
                       ) : (
@@ -414,8 +460,12 @@ function VistaProyectos({ proyectos, onAgregar, onVerAvances, cargando, error, c
             </div>
             {clienteAuth && editandoId !== proy.id && (
               <>
-                <button className="mei-delete-btn" onClick={() => iniciarEdicion(proy)} title="Editar">✏️</button>
-                <button className="mei-delete-btn" onClick={() => eliminarProyecto(proy.id)} title="Eliminar">🗑️</button>
+                <div style={{ marginTop: 8 }}>
+                  <button className="mei-edit-btn" onClick={() => iniciarEdicion(proy)} title="Editar">Editar</button>
+                </div>
+                <div style={{ marginTop: 8 }}>
+                  <button className="mei-delete-btn" onClick={() => eliminarProyecto(proy.id)} title="Eliminar">🗑️</button>
+                </div>
               </>
             )}
           </li>
@@ -437,6 +487,8 @@ function VistaAvances({ proyecto, onVolver, clienteAuth }) {
   const [editArchivo, setEditArchivo] = useState(null)
   const [cargando, setCargando] = useState(false)
   const [error, setError] = useState(null)
+  const [erroresForm, setErroresForm] = useState({})
+  const [erroresEdit, setErroresEdit] = useState({})
 
   useEffect(() => {
     obtenerAvances()
@@ -460,6 +512,14 @@ function VistaAvances({ proyecto, onVolver, clienteAuth }) {
     e.preventDefault()
     setAgregando(true)
     setError(null)
+    let errores = {}
+    if (!descripcion.trim()) errores.descripcion = 'La descripción es obligatoria.'
+    if (Object.keys(errores).length > 0) {
+      setErroresForm(errores)
+      setAgregando(false)
+      return
+    }
+    setErroresForm({})
     let archivoUrl = null
     if (archivo) {
       // Limpiar el nombre del archivo para evitar errores de key
@@ -512,9 +572,15 @@ function VistaAvances({ proyecto, onVolver, clienteAuth }) {
   }
 
   async function guardarEdicion(id) {
+    let errores = {}
+    if (!editDescripcion.trim()) errores.descripcion = 'La descripción es obligatoria.'
+    if (Object.keys(errores).length > 0) {
+      setErroresEdit(errores)
+      return
+    }
+    setErroresEdit({})
     let archivoUrl = null
     if (editArchivo) {
-      // Limpiar el nombre del archivo para evitar errores de key
       const cleanName = editArchivo.name
         .normalize('NFD').replace(/[^\w.\-]+/g, '_')
         .replace(/_+/g, '_');
@@ -560,8 +626,8 @@ function VistaAvances({ proyecto, onVolver, clienteAuth }) {
             placeholder="Descripción del avance"
             value={descripcion}
             onChange={e => setDescripcion(e.target.value)}
-            required
           />
+          {erroresForm.descripcion && <div style={{ color: 'red', marginBottom: 4 }}>{erroresForm.descripcion}</div>}
           <input
             type="text"
             placeholder="Autor (opcional)"
@@ -574,7 +640,7 @@ function VistaAvances({ proyecto, onVolver, clienteAuth }) {
             onChange={e => setArchivo(e.target.files[0])}
             style={{ marginTop: 8, marginBottom: 8 }}
           />
-          <button type="submit" disabled={agregando || !descripcion}>
+          <button type="submit" disabled={agregando}>
             Agregar avance
           </button>
         </form>
@@ -592,6 +658,7 @@ function VistaAvances({ proyecto, onVolver, clienteAuth }) {
                     onChange={e => setEditDescripcion(e.target.value)}
                     style={{ marginBottom: 8 }}
                   />
+                  {erroresEdit.descripcion && <div style={{ color: 'red', marginBottom: 4 }}>{erroresEdit.descripcion}</div>}
                   <input
                     type="text"
                     value={editAutor}
@@ -614,14 +681,11 @@ function VistaAvances({ proyecto, onVolver, clienteAuth }) {
               ) : (
                 <>
                   {av.descripcion}
-                  <div className="mei-avance-date">
-                    {av.autor && <>Autor: {av.autor} <br /></>}
-                    Fecha: {new Date(av.fecha).toLocaleString()}
-                  </div>
+                  {/* Imagen/video/enlace debajo de la descripción y arriba de autor/fecha */}
                   {av.archivo_url && (
                     <div style={{ marginTop: 8 }}>
                       {av.archivo_url.match(/\.(jpg|jpeg|png|gif|bmp)$/i) ? (
-                        <img src={av.archivo_url} alt="Imagen avance" style={{ maxWidth: '200px', maxHeight: '200px' }} />
+                        <img src={av.archivo_url} alt="Imagen avance" style={{ maxWidth: '350px', maxHeight: '350px' }} />
                       ) : av.archivo_url.match(/\.(mp4|webm|ogg)$/i) ? (
                         <video src={av.archivo_url} controls style={{ maxWidth: '200px', maxHeight: '200px' }} />
                       ) : (
@@ -629,13 +693,21 @@ function VistaAvances({ proyecto, onVolver, clienteAuth }) {
                       )}
                     </div>
                   )}
+                  <div className="mei-avance-date">
+                    {av.autor && <>Autor: {av.autor} <br /></>}
+                    Fecha: {new Date(av.fecha).toLocaleString()}
+                  </div>
                 </>
               )}
             </div>
             {clienteAuth && editandoId !== av.id && (
               <>
-                <button className="mei-delete-btn" onClick={() => iniciarEdicion(av)} title="Editar">✏️</button>
-                <button className="mei-delete-btn" onClick={() => eliminarAvance(av.id)} title="Eliminar">🗑️</button>
+                <div style={{ marginTop: 8 }}>
+                  <button className="mei-edit-btn" onClick={() => iniciarEdicion(av)} title="Editar">Editar</button>
+                </div>
+                <div style={{ marginTop: 8 }}>
+                  <button className="mei-delete-btn" onClick={() => eliminarAvance(av.id)} title="Eliminar">🗑️</button>
+                </div>
               </>
             )}
           </li>
