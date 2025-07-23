@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { supabase } from './supabaseClient'
 import './App.css'
+import './responsive.css'
 import Swal from 'sweetalert2'
 
 const CLIENTE_PASSWORD = 'mei2024'
@@ -85,27 +86,29 @@ function App() {
   }
 
   return (
-    <div className="mei-container">
-      <header className="mei-header">
-        <h1>La Agenda de Mei</h1>
-        <nav>
-          <button className={vista === 'proyectos' ? 'active' : ''} onClick={volverAProyectos} disabled={vista === 'proyectos'}>
-            Proyectos
-          </button>
-          <button onClick={handleClienteClick} style={{ marginLeft: 'auto' }}>
-            Cliente
-          </button>
-          {!clienteAuth && (
-            <button className="login-btn" onClick={() => setShowLogin(true)}>
-              Iniciar sesión
+    <div className="mei-container" style={{ minHeight: '100vh', background: '#f5f3fa' }}>
+      <header className="mei-header" style={{ boxShadow: '0 2px 8px #eee', marginBottom: 24, padding: '16px 0', background: '#fff', borderRadius: 0 }}>
+        <div className="mei-header-inner" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', maxWidth: 900, margin: '0 auto', padding: '0 16px', flexWrap: 'wrap' }}>
+          <h1 style={{ fontSize: 28, color: '#a77ff2', margin: 0, letterSpacing: 1, flex: 1, minWidth: 180 }}>La Agenda de Mei</h1>
+          <nav style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+            <button className={vista === 'proyectos' ? 'active' : ''} onClick={volverAProyectos} disabled={vista === 'proyectos'} style={{ minWidth: 110, textAlign: 'center', padding: '8px 0' }}>
+              Proyectos
             </button>
-          )}
-          {clienteAuth && (
-            <button className="logout-btn" onClick={handleLogout}>
-              Cerrar sesión
+            <button onClick={handleClienteClick} style={{ minWidth: 110, textAlign: 'center', padding: '8px 0' }}>
+              Cliente
             </button>
-          )}
-        </nav>
+            {!clienteAuth && (
+              <button className="login-btn" onClick={() => setShowLogin(true)} style={{ minWidth: 110, background: '#a77ff2', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 0', textAlign: 'center', fontWeight: 600, fontSize: 15 }}>
+                Iniciar sesión
+              </button>
+            )}
+            {clienteAuth && (
+              <button className="logout-btn" onClick={handleLogout} style={{ minWidth: 130, background: '#f7d6e0', color: '#a77ff2', border: 'none', borderRadius: 6, padding: '8px 0', fontWeight: 600, fontSize: 15, whiteSpace: 'nowrap', textAlign: 'center' }}>
+                Cerrar sesión
+              </button>
+            )}
+          </nav>
+        </div>
       </header>
       <main>
         {showLogin && (
@@ -135,7 +138,7 @@ function App() {
         ) : null}
       </main>
       <footer className="mei-footer">
-        <span>© {new Date().getFullYear()} La Agenda de Mei</span>
+        <span style={{ marginTop: 40, padding: '18px 0', color: '#a77ff2', textAlign: 'center', borderRadius: 0, fontWeight: 600, fontSize: 15, letterSpacing: 1 }}>© {new Date().getFullYear()} La Agenda de Mei</span>
       </footer>
     </div>
   )
@@ -164,19 +167,19 @@ function LoginModal({ onLogin, error, onClose }) {
     setPassword('')
   }
   return (
-    <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: '#0008', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-      <form onSubmit={handleSubmit} style={{ background: '#fff', padding: 24, borderRadius: 12, minWidth: 300 }}>
-        <h3>Acceso cliente</h3>
+    <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(167,127,242,0.10)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+      <form onSubmit={handleSubmit} style={{ background: '#fff', padding: 32, borderRadius: 16, minWidth: 320, boxShadow: '0 4px 24px #a77ff244', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <h3 style={{ color: '#a77ff2', margin: 0, marginBottom: 8, textAlign: 'center', fontWeight: 700 }}>Acceso cliente</h3>
         <input
           type="password"
           placeholder="Contraseña"
           value={password}
           onChange={e => setPassword(e.target.value)}
-          style={{ width: '100%', marginBottom: 8 }}
+          style={{ width: '', marginBottom: 4, padding: 10, borderRadius: 6, border: '1px solid #ccc', fontSize: 16 }}
         />
-        <button type="submit" style={{ width: '100%' }}>Entrar</button>
-        <button type="button" onClick={onClose} style={{ width: '100%', marginTop: 8 }}>Cancelar</button>
-        {error && <div style={{ color: 'red', marginTop: 8 }}>{error}</div>}
+        <button type="submit" style={{ background: '#a77ff2', color: '#fff', border: 'none', borderRadius: 6, padding: '10px ', fontWeight: 600, fontSize: 16 }}>Entrar</button>
+        <button type="button" onClick={onClose} style={{  background: '#f7d6e0', color: '#a77ff2', border: 'none', borderRadius: 6, padding: '10px 0', fontWeight: 600, fontSize: 16 }}>Cancelar</button>
+        {error && <div style={{ color: 'red', marginTop: 8, textAlign: 'center' }}>{error}</div>}
       </form>
     </div>
   )
@@ -328,22 +331,24 @@ function VistaProyectos({ proyectos, onAgregar, onVerAvances, cargando, error, c
   }
 
   return (
-    <section className="mei-section">
-      <h2>Proyectos</h2>
+    <section className="mei-section" style={{ maxWidth: 900, margin: '0 auto', background: '#fff', borderRadius: 12, boxShadow: '0 2px 12px #eee', padding: '5vw 4vw', minWidth: 0 }}>
+      <h2 style={{ color: '#a77ff2', marginBottom: 20, fontWeight: 700 }}>Proyectos</h2>
       {/* Formulario solo para el cliente autenticado */}
       {clienteAuth && (
-        <form className="mei-upload-form" onSubmit={agregarProyecto}>
+        <form className="mei-upload-form" onSubmit={agregarProyecto} style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
           <input
             type="text"
             placeholder="Nombre del proyecto"
             value={nombre}
             onChange={e => setNombre(e.target.value)}
+            style={{ padding: 10, borderRadius: 6, border: '1px solid #ccc', fontSize: 16 }}
           />
           {erroresForm.nombre && <div style={{ color: 'red', marginBottom: 4 }}>{erroresForm.nombre}</div>}
           <textarea
             placeholder="Descripción"
             value={descripcion}
             onChange={e => setDescripcion(e.target.value)}
+            style={{ padding: 10, borderRadius: 6, border: '1px solid #ccc', fontSize: 16, minHeight: 60 }}
           />
           <input
             type="file"
@@ -351,7 +356,7 @@ function VistaProyectos({ proyectos, onAgregar, onVerAvances, cargando, error, c
             onChange={e => setArchivo(e.target.files[0])}
             style={{ marginTop: 8, marginBottom: 8 }}
           />
-          <button type="submit" disabled={agregando}>
+          <button type="submit" disabled={agregando} style={{ background: '#a77ff2', color: '#fff', border: 'none', borderRadius: 6, padding: '10px 0', fontWeight: 600, fontSize: 16, textAlign: 'center' }}>
             Agregar proyecto
           </button>
         </form>
@@ -360,7 +365,7 @@ function VistaProyectos({ proyectos, onAgregar, onVerAvances, cargando, error, c
       {errorLocal && <div style={{ color: 'red' }}>{errorLocal}</div>}
       {cargando && <div>Cargando...</div>}
       {/* Mostrar proyectos subidos por el cliente y todos los proyectos */}
-      <ul>
+      <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
         {proyectos.length === 0 && (
           <li style={{ color: '#a77ff2', textAlign: 'center', marginTop: 24 }}>
             No hay proyectos registrados.
@@ -371,45 +376,51 @@ function VistaProyectos({ proyectos, onAgregar, onVerAvances, cargando, error, c
           </li>
         )}
         {proyectos.map(proy => (
-          <li key={proy.id} className="mei-avance-item">
-            <div className="mei-avance-desc">
+          <li key={proy.id} className="mei-avance-item" style={{ background: '#faf8ff', borderRadius: 10, marginBottom: 18, boxShadow: '0 1px 6px #eee', padding: '5vw 4vw', display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap', minWidth: 0 }}>
+            <div className="mei-avance-desc" style={{ flex: 1, minWidth: 0 }}>
               {editandoId === proy.id ? (
-                <>
-                  <input
-                    type="text"
-                    value={editNombre}
-                    onChange={e => setEditNombre(e.target.value)}
-                    style={{ marginBottom: 8 }}
-                  />
-                  {erroresEdit.nombre && <div style={{ color: 'red', marginBottom: 4 }}>{erroresEdit.nombre}</div>}
-                  <textarea
-                    value={editDescripcion}
-                    onChange={e => setEditDescripcion(e.target.value)}
-                    style={{ marginBottom: 8 }}
-                  />
-                  <select
-                    value={editEstado}
-                    onChange={e => setEditEstado(e.target.value)}
-                    style={{ marginBottom: 8 }}
-                  >
-                    <option value="activo">En progreso</option>
-                    <option value="pausado">Pausado</option>
-                    <option value="finalizado">Finalizado</option>
-                    <option value="cancelado">Cancelado</option>
-                  </select>
-                  <input
-                    type="file"
-                    accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"
-                    onChange={e => setEditArchivo(e.target.files[0])}
-                    style={{ marginTop: 8, marginBottom: 8 }}
-                  />
-                  <button className="mei-ver-todos-btn" onClick={() => guardarEdicion(proy.id)} disabled={!editNombre}>
-                    Guardar
-                  </button>
-                  <button className="mei-delete-btn" onClick={cancelarEdicion}>
-                    Cancelar
-                  </button>
-                </>
+                <div style={{ background: '#f0eaff', borderRadius: 10, padding: '18px 12px', marginBottom: 8, boxShadow: '0 1px 4px #e5d8fa', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <input
+                      type="text"
+                      value={editNombre}
+                      onChange={e => setEditNombre(e.target.value)}
+                      style={{ padding: 8, borderRadius: 6, border: '1px solid #ccc', fontSize: 15 }}
+                      placeholder="Nombre del proyecto"
+                    />
+                    {erroresEdit.nombre && <div style={{ color: 'red', marginBottom: 4 }}>{erroresEdit.nombre}</div>}
+                    <textarea
+                      value={editDescripcion}
+                      onChange={e => setEditDescripcion(e.target.value)}
+                      style={{ padding: 8, borderRadius: 6, border: '1px solid #ccc', fontSize: 15, minHeight: 50 }}
+                      placeholder="Descripción"
+                    />
+                    <select
+                      value={editEstado}
+                      onChange={e => setEditEstado(e.target.value)}
+                      style={{ padding: 8, borderRadius: 6, border: '1px solid #ccc', fontSize: 15 }}
+                    >
+                      <option value="activo">En progreso</option>
+                      <option value="pausado">Pausado</option>
+                      <option value="finalizado">Finalizado</option>
+                      <option value="cancelado">Cancelado</option>
+                    </select>
+                    <input
+                      type="file"
+                      accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"
+                      onChange={e => setEditArchivo(e.target.files[0])}
+                      style={{ marginTop: 8, marginBottom: 8 }}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 8 }}>
+                    <button className="mei-ver-todos-btn" onClick={() => guardarEdicion(proy.id)} disabled={!editNombre} style={{ background: '#a77ff2', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 24px', minWidth: 90, fontWeight: 600, fontSize: 15, boxShadow: '0 1px 2px #e5d8fa', textAlign: 'center' }}>
+                      Guardar
+                    </button>
+                    <button className="mei-delete-btn" onClick={cancelarEdicion} style={{ background: '#f7d6e0', color: '#a77ff2', border: 'none', borderRadius: 6, padding: '', minWidth: 90, fontWeight: 600, fontSize: 15, boxShadow: '0 1px 2px #e5d8fa', whiteSpace: 'nowrap', textAlign: 'center' }}>
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
               ) : (
                 <>
                   <strong>{proy.nombre}</strong>
@@ -459,14 +470,10 @@ function VistaProyectos({ proyectos, onAgregar, onVerAvances, cargando, error, c
               )}
             </div>
             {clienteAuth && editandoId !== proy.id && (
-              <>
-                <div style={{ marginTop: 8 }}>
-                  <button className="mei-edit-btn" onClick={() => iniciarEdicion(proy)} title="Editar">Editar</button>
-                </div>
-                <div style={{ marginTop: 8 }}>
-                  <button className="mei-delete-btn" onClick={() => eliminarProyecto(proy.id)} title="Eliminar">🗑️</button>
-                </div>
-              </>
+              <div style={{ display: 'flex', flexDirection: 'row', gap: 10, alignItems: 'center', justifyContent: 'flex-end', minWidth: 120, marginTop: 8 }}>
+                <button className="mei-edit-btn" onClick={() => iniciarEdicion(proy)} title="Editar" style={{ background: '#a77ff2', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 20px', fontWeight: 600, fontSize: 15, boxShadow: '0 1px 2px #e5d8fa', minWidth: 90, textAlign: '' }}>Editar</button>
+                <button className="mei-delete-btn" onClick={() => eliminarProyecto(proy.id)} title="Eliminar" style={{ background: '#f7d6e0', color: '#a77ff2', border: 'none', borderRadius: 6, padding: '', fontWeight: 600, fontSize: 15, boxShadow: '0 1px 2px #e5d8fa', minWidth: 50, textAlign: 'center' }}>🗑️</button>
+              </div>
             )}
           </li>
         ))}
@@ -616,16 +623,17 @@ function VistaAvances({ proyecto, onVolver, clienteAuth }) {
 
 
   return (
-    <section className="mei-section">
-      <button className="mei-ver-todos-btn" onClick={onVolver} style={{ marginBottom: 16 }}>&larr; Volver a proyectos</button>
-      <h2>Avances de: {proyecto.nombre}</h2>
+    <section className="mei-section" style={{ maxWidth: 900, margin: '0 auto', background: '#fff', borderRadius: 12, boxShadow: '0 2px 12px #eee', padding: '5vw 4vw', minWidth: 0 }}>
+      <button className="mei-ver-todos-btn" onClick={onVolver} style={{ marginBottom: 16, background: '#f7d6e0', color: '#a77ff2', border: 'none', borderRadius: 6, padding: '8px 18px', fontWeight: 600 }}>&larr; Volver a proyectos</button>
+      <h2 style={{ color: '#a77ff2', marginBottom: 20, fontWeight: 700 }}>Avances de: {proyecto.nombre}</h2>
       {/* Filtro de seleccionar proyecto eliminado */}
       {clienteAuth && (
-        <form className="mei-upload-form" onSubmit={agregarAvance}>
+        <form className="mei-upload-form" onSubmit={agregarAvance} style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
           <textarea
             placeholder="Descripción del avance"
             value={descripcion}
             onChange={e => setDescripcion(e.target.value)}
+            style={{ padding: 10, borderRadius: 6, border: '1px solid #ccc', fontSize: 16, minHeight: 60 }}
           />
           {erroresForm.descripcion && <div style={{ color: 'red', marginBottom: 4 }}>{erroresForm.descripcion}</div>}
           <input
@@ -633,6 +641,7 @@ function VistaAvances({ proyecto, onVolver, clienteAuth }) {
             placeholder="Autor (opcional)"
             value={autor}
             onChange={e => setAutor(e.target.value)}
+            style={{ padding: 10, borderRadius: 6, border: '1px solid #ccc', fontSize: 16 }}
           />
           <input
             type="file"
@@ -640,44 +649,50 @@ function VistaAvances({ proyecto, onVolver, clienteAuth }) {
             onChange={e => setArchivo(e.target.files[0])}
             style={{ marginTop: 8, marginBottom: 8 }}
           />
-          <button type="submit" disabled={agregando}>
+          <button type="submit" disabled={agregando} style={{ background: '#a77ff2', color: '#fff', border: 'none', borderRadius: 6, padding: '10px 0', fontWeight: 600, fontSize: 16 }}>
             Agregar avance
           </button>
         </form>
       )}
       {error && <div style={{ color: 'red' }}>{error}</div>}
       {cargando && <div>Cargando...</div>}
-      <ul className="mei-avances-list">
+      <ul className="mei-avances-list" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
         {avances.map(av => (
-          <li key={av.id} className="mei-avance-item">
-            <div className="mei-avance-desc">
+          <li key={av.id} className="mei-avance-item" style={{ background: '#faf8ff', borderRadius: 10, marginBottom: 18, boxShadow: '0 1px 6px #eee', padding: '5vw 4vw', display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap', minWidth: 0 }}>
+            <div className="mei-avance-desc" style={{ flex: 1, minWidth: 0 }}>
               {editandoId === av.id ? (
-                <>
-                  <textarea
-                    value={editDescripcion}
-                    onChange={e => setEditDescripcion(e.target.value)}
-                    style={{ marginBottom: 8 }}
-                  />
-                  {erroresEdit.descripcion && <div style={{ color: 'red', marginBottom: 4 }}>{erroresEdit.descripcion}</div>}
-                  <input
-                    type="text"
-                    value={editAutor}
-                    onChange={e => setEditAutor(e.target.value)}
-                    style={{ marginBottom: 8 }}
-                  />
-                  <input
-                    type="file"
-                    accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"
-                    onChange={e => setEditArchivo(e.target.files[0])}
-                    style={{ marginTop: 8, marginBottom: 8 }}
-                  />
-                  <button className="mei-ver-todos-btn" onClick={() => guardarEdicion(av.id)} disabled={!editDescripcion}>
-                    Guardar
-                  </button>
-                  <button className="mei-delete-btn" onClick={cancelarEdicion}>
-                    Cancelar
-                  </button>
-                </>
+                <div style={{ background: '#f0eaff', borderRadius: 10, padding: '18px 12px', marginBottom: 8, boxShadow: '0 1px 4px #e5d8fa', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <textarea
+                      value={editDescripcion}
+                      onChange={e => setEditDescripcion(e.target.value)}
+                      style={{ padding: 8, borderRadius: 6, border: '1px solid #ccc', fontSize: 15, minHeight: 50 }}
+                      placeholder="Descripción del avance"
+                    />
+                    {erroresEdit.descripcion && <div style={{ color: 'red', marginBottom: 4 }}>{erroresEdit.descripcion}</div>}
+                    <input
+                      type="text"
+                      value={editAutor}
+                      onChange={e => setEditAutor(e.target.value)}
+                      style={{ padding: 8, borderRadius: 6, border: '1px solid #ccc', fontSize: 15 }}
+                      placeholder="Autor (opcional)"
+                    />
+                    <input
+                      type="file"
+                      accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"
+                      onChange={e => setEditArchivo(e.target.files[0])}
+                      style={{ marginTop: 8, marginBottom: 8 }}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 8 }}>
+                    <button className="mei-ver-todos-btn" onClick={() => guardarEdicion(av.id)} disabled={!editDescripcion} style={{ background: '#a77ff2', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 24px', fontWeight: 600, fontSize: 15, boxShadow: '0 1px 2px #e5d8fa' }}>
+                      Guardar
+                    </button>
+                    <button className="mei-delete-btn" onClick={cancelarEdicion} style={{ background: '#f7d6e0', color: '#a77ff2', border: 'none', borderRadius: 6, padding: '8px 24px', minWidth: 90, fontWeight: 600, fontSize: 15, boxShadow: '0 1px 2px #e5d8fa', whiteSpace: 'nowrap' }}>
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
               ) : (
                 <>
                   {av.descripcion}
@@ -701,14 +716,10 @@ function VistaAvances({ proyecto, onVolver, clienteAuth }) {
               )}
             </div>
             {clienteAuth && editandoId !== av.id && (
-              <>
-                <div style={{ marginTop: 8 }}>
-                  <button className="mei-edit-btn" onClick={() => iniciarEdicion(av)} title="Editar">Editar</button>
-                </div>
-                <div style={{ marginTop: 8 }}>
-                  <button className="mei-delete-btn" onClick={() => eliminarAvance(av.id)} title="Eliminar">🗑️</button>
-                </div>
-              </>
+              <div style={{ display: 'flex', flexDirection: 'row', gap: 10, alignItems: 'center', justifyContent: 'flex-end', minWidth: 120, marginTop: 8 }}>
+                <button className="mei-edit-btn" onClick={() => iniciarEdicion(av)} title="Editar" style={{ background: '#a77ff2', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 20px', fontWeight: 600, fontSize: 15, boxShadow: '0 1px 2px #e5d8fa', minWidth: 90 }}>Editar</button>
+                <button className="mei-delete-btn" onClick={() => eliminarAvance(av.id)} title="Eliminar" style={{ background: '#f7d6e0', color: '#a77ff2', border: 'none', borderRadius: 6, padding: '', fontWeight: 600, fontSize: 15, boxShadow: '0 1px 2px #e5d8fa', minWidth: 50 }}>🗑️</button>
+              </div>
             )}
           </li>
         ))}

@@ -1,3 +1,25 @@
+/* Modal login mejorado */
+.login-modal-form {
+  /* Botones del modal de login del mismo ancho y padding que el input */
+}
+.login-modal-form button {
+  width: 100%;
+  padding: 0.7rem 1.1rem;
+  font-size: 1.05rem;
+  border-radius: 10px;
+  margin-top: 0.2rem;
+  box-sizing: border-box;
+}
+  background: linear-gradient(120deg, #fff8f0 60%, #ffe0f7 100%);
+  border-radius: 22px;
+  box-shadow: 0 8px 32px #a77ff244, 0 2px 8px #c7eaff44;
+  padding: 2.2rem 1.2rem;
+  min-width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  border: 1.5px solid #f7d6e0;
+}
 .dropzone {
   border: 2px dashed #a77ff2;
   border-radius: 12px;
@@ -57,19 +79,25 @@ nav {
 }
 
 nav button {
-  background: #f7d6e0;
+  background: linear-gradient(90deg, #f7d6e0 0%, #c7eaff 100%);
   border: none;
-  border-radius: 16px;
-  padding: 0.5rem 1.5rem;
-  font-size: 1rem;
+  border-radius: 18px;
+  padding: 0.6rem 2.1rem;
+  font-size: 1.08rem;
   color: #a77ff2;
+  font-family: 'Quicksand', cursive, sans-serif;
+  font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s, color 0.2s;
+  box-shadow: 0 2px 8px #c7eaff33;
+  transition: background 0.25s, color 0.2s, transform 0.13s;
+  outline: none;
 }
 
 nav button.active, nav button:hover {
-  background: #c7eaff;
+  background: linear-gradient(90deg, #a77ff2 0%, #f7d6e0 100%);
   color: #fff;
+  transform: scale(1.04);
+  box-shadow: 0 4px 16px #a77ff244;
 }
 
 main {
@@ -106,19 +134,25 @@ main {
 }
 
 .mei-upload-form button {
-  background: #a77ff2;
+  background: linear-gradient(90deg, #a77ff2 0%, #f7d6e0 100%);
   color: #fff;
   border: none;
-  border-radius: 8px;
-  padding: 0.5rem 1.5rem;
-  font-size: 1rem;
+  border-radius: 18px;
+  padding: 0.6rem 2.1rem;
+  font-size: 1.08rem;
+  font-family: 'Quicksand', cursive, sans-serif;
+  font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  box-shadow: 0 2px 8px #c7eaff33;
+  transition: background 0.25s, color 0.2s, transform 0.13s;
+  outline: none;
 }
 
 .mei-upload-form button:hover {
-  background: #f7d6e0;
-  color: #a77ff2;
+  background: linear-gradient(90deg, #f7d6e0 0%, #a77ff2 100%);
+  color: #fff;
+  transform: scale(1.04);
+  box-shadow: 0 4px 16px #a77ff244;
 }
 
 .mei-upload-form select {
@@ -153,23 +187,6 @@ main {
   font-size: 1rem;
   border-top-left-radius: 16px;
   border-top-right-radius: 16px;
-}
-
-.logout-btn {
-  background: #ffe0f7;
-  color: #a77ff2;
-  border: none;
-  border-radius: 8px;
-  padding: 0.3rem 1rem;
-  font-size: 0.95rem;
-  margin-top: 1rem;
-  cursor: pointer;
-  transition: background 0.2s, color 0.2s;
-  float: right;
-}
-.logout-btn:hover {
-  background: #a77ff2;
-  color: #fff;
 }
 
 .mei-avances-list {
@@ -280,22 +297,25 @@ main {
 }
 
 .mei-ver-todos-btn {
-  background: #a77ff2;
+  background: linear-gradient(90deg, #a77ff2 0%, #f7d6e0 100%);
   color: #fff;
   border: none;
-  border-radius: 16px;
-  padding: 0.6rem 2rem;
+  border-radius: 18px;
+  padding: 0.6rem 2.1rem;
   font-size: 1.08rem;
   font-family: 'Quicksand', cursive, sans-serif;
+  font-weight: 600;
   cursor: pointer;
   margin-top: 0.5rem;
-  box-shadow: 0 1px 4px #c7eaff44;
-  transition: background 0.2s, color 0.2s, transform 0.1s;
+  box-shadow: 0 2px 8px #c7eaff33;
+  transition: background 0.25s, color 0.2s, transform 0.13s;
+  outline: none;
 }
 .mei-ver-todos-btn:hover {
-  background: #f7d6e0;
-  color: #a77ff2;
+  background: linear-gradient(90deg, #f7d6e0 0%, #a77ff2 100%);
+  color: #fff;
   transform: scale(1.04);
+  box-shadow: 0 4px 16px #a77ff244;
 }
 @media (max-width: 600px) {
   .mei-avance-item {
@@ -310,11 +330,6 @@ main {
     max-width: 100%;
     max-height: 120px;
   }
-  .mei-delete-btn {
-    top: 0.7rem;
-    right: 0.7rem;
-  }
-} 
 
 .mei-vista-previa-reciente {
   margin-top: 2.5rem;
@@ -362,4 +377,13 @@ main {
   font-weight: 600;
   letter-spacing: 1px;
   font-family: 'Quicksand', cursive, sans-serif;
+}
+.mei-upload-form textarea {
+  border: 1.5px solid #c7eaff;
+  border-radius: 10px;
+  padding: 0.7rem 1.1rem;
+  font-size: 1.05rem;
+  background: #fff8f0;
+  transition: border 0.2s, box-shadow 0.2s;
+  box-shadow: 0 1px 4px #c7eaff22;
 }
