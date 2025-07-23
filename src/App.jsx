@@ -92,9 +92,6 @@ function App() {
           <button className={vista === 'proyectos' ? 'active' : ''} onClick={volverAProyectos} disabled={vista === 'proyectos'}>
             Proyectos
           </button>
-          <button className={vista === 'avances' ? 'active' : ''} onClick={handleAvancesClick} disabled={vista === 'avances' || proyectos.length === 0}>
-            Avances
-          </button>
           <button onClick={handleClienteClick} style={{ marginLeft: 'auto' }}>
             Cliente
           </button>
@@ -109,48 +106,20 @@ function App() {
             </button>
           )}
         </nav>
-        {/* Filtro para cliente: proyectos o avances */}
-        {clienteAuth && vista !== 'cliente' && (
-          <div className="mei-filtro-avances" style={{ marginTop: 16 }}>
-            <label htmlFor="filtro-vista">Ver:</label>
-            <select id="filtro-vista" value={filtroVista} onChange={e => setFiltroVista(e.target.value)}>
-              <option value="proyectos">Proyectos</option>
-              <option value="avances">Avances</option>
-            </select>
-          </div>
-        )}
       </header>
       <main>
         {showLogin && (
           <LoginModal onLogin={handleLogin} error={loginError} onClose={() => setShowLogin(false)} />
         )}
-        {/* Mostrar según filtro */}
-        {clienteAuth && vista !== 'cliente' ? (
-          filtroVista === 'proyectos' ? (
-            <VistaProyectos
-              proyectos={proyectos}
-              onAgregar={obtenerProyectos}
-              onVerAvances={irAAvances}
-              cargando={cargando}
-              error={error}
-              clienteAuth={clienteAuth}
-            />
-          ) : (
-            proyectoSeleccionado ? (
-              <VistaAvances
-                proyecto={proyectoSeleccionado}
-                onVolver={volverAProyectos}
-                clienteAuth={clienteAuth}
-              />
-            ) : (
-              <div style={{ marginTop: 32, textAlign: 'center' }}>Selecciona un proyecto para ver sus avances.</div>
-            )
-          )
-        ) : vista === 'proyectos' ? (
+        {/* Mostrar proyectos y avances */}
+        {vista === 'proyectos' ? (
           <VistaProyectos
             proyectos={proyectos}
             onAgregar={obtenerProyectos}
-            onVerAvances={irAAvances}
+            onVerAvances={proy => {
+              setProyectoSeleccionado(proy);
+              setVista('avances');
+            }}
             cargando={cargando}
             error={error}
             clienteAuth={clienteAuth}
@@ -216,11 +185,13 @@ function LoginModal({ onLogin, error, onClose }) {
 function VistaProyectos({ proyectos, onAgregar, onVerAvances, cargando, error, clienteAuth }) {
   const [nombre, setNombre] = useState('')
   const [descripcion, setDescripcion] = useState('')
+  const [estado, setEstado] = useState('activo')
   const [archivo, setArchivo] = useState(null)
   const [agregando, setAgregando] = useState(false)
   const [editandoId, setEditandoId] = useState(null)
   const [editNombre, setEditNombre] = useState('')
   const [editDescripcion, setEditDescripcion] = useState('')
+  const [editEstado, setEditEstado] = useState('activo')
   const [errorLocal, setErrorLocal] = useState(null)
 
   async function agregarProyecto(e) {
@@ -246,12 +217,13 @@ function VistaProyectos({ proyectos, onAgregar, onVerAvances, cargando, error, c
     }
     const { data: insertData, error } = await supabase
       .from('proyectos')
-      .insert([{ nombre, descripcion, archivo_url: archivoUrl }]);
+      .insert([{ nombre, descripcion, estado, archivo_url: archivoUrl }]);
     console.log('Resultado insert proyecto:', { insertData, error });
     if (error) setErrorLocal(error.message)
     else Swal.fire('¡Proyecto agregado!', '', 'success')
     setNombre('')
     setDescripcion('')
+    setEstado('activo')
     setArchivo(null)
     setTimeout(() => { onAgregar(); }, 300); // Recarga la lista tras agregar
     setAgregando(false)
@@ -293,18 +265,20 @@ function VistaProyectos({ proyectos, onAgregar, onVerAvances, cargando, error, c
     setEditandoId(proy.id)
     setEditNombre(proy.nombre)
     setEditDescripcion(proy.descripcion)
+    setEditEstado(proy.estado || 'activo')
   }
 
   async function guardarEdicion(id) {
     const { error } = await supabase
       .from('proyectos')
-      .update({ nombre: editNombre, descripcion: editDescripcion })
+      .update({ nombre: editNombre, descripcion: editDescripcion, estado: editEstado })
       .eq('id', id)
     if (error) Swal.fire('Error', error.message, 'error')
     else Swal.fire('Guardado', 'Proyecto actualizado', 'success')
     setEditandoId(null)
     setEditNombre('')
     setEditDescripcion('')
+    setEditEstado('activo')
     await onAgregar()
   }
 
@@ -373,6 +347,16 @@ function VistaProyectos({ proyectos, onAgregar, onVerAvances, cargando, error, c
                     onChange={e => setEditDescripcion(e.target.value)}
                     style={{ marginBottom: 8 }}
                   />
+                  <select
+                    value={editEstado}
+                    onChange={e => setEditEstado(e.target.value)}
+                    style={{ marginBottom: 8 }}
+                  >
+                    <option value="activo">En progreso</option>
+                    <option value="pausado">Pausado</option>
+                    <option value="finalizado">Finalizado</option>
+                    <option value="cancelado">Cancelado</option>
+                  </select>
                   <button className="mei-ver-todos-btn" onClick={() => guardarEdicion(proy.id)} disabled={!editNombre}>
                     Guardar
                   </button>
@@ -383,30 +367,53 @@ function VistaProyectos({ proyectos, onAgregar, onVerAvances, cargando, error, c
               ) : (
                 <>
                   <strong>{proy.nombre}</strong>
-                  <div>{proy.descripcion}</div>
-                  <div className="mei-avance-date">
-                    Estado: {proy.estado || 'activo'}<br />
-                    Creado: {proy.fecha_creacion ? new Date(proy.fecha_creacion).toLocaleString() : 'Sin fecha'}
-                  </div>
                   {proy.archivo_url && (
-                    <div style={{ marginTop: 8 }}>
+                    <div style={{ margin: '12px 0' }}>
                       {proy.archivo_url.match(/\.(jpg|jpeg|png|gif|bmp|png)$/i) ? (
-                        <img src={proy.archivo_url} alt="Imagen proyecto" style={{ maxWidth: '200px', maxHeight: '200px' }} />
+                        <img src={proy.archivo_url} alt="Imagen proyecto" style={{ maxWidth: '200px', maxHeight: '200px', borderRadius: 8 }} />
                       ) : proy.archivo_url.match(/\.(mp4|webm|ogg)$/i) ? (
-                        <video src={proy.archivo_url} controls style={{ maxWidth: '200px', maxHeight: '200px' }} />
+                        <video src={proy.archivo_url} controls style={{ maxWidth: '200px', maxHeight: '200px', borderRadius: 8 }} />
                       ) : (
                         <a href={proy.archivo_url} target="_blank" rel="noopener noreferrer">Ver documento</a>
                       )}
                     </div>
                   )}
+                  <div>{proy.descripcion}</div>
+                  <div className="mei-avance-date">
+                    Estado: {clienteAuth ? (
+                      <select
+                        value={proy.estado || 'activo'}
+                        onChange={async e => {
+                          const nuevoEstado = e.target.value;
+                          const { error } = await supabase
+                            .from('proyectos')
+                            .update({ estado: nuevoEstado })
+                            .eq('id', proy.id);
+                          if (!error) {
+                            await onAgregar();
+                          } else {
+                            Swal.fire('Error', error.message, 'error');
+                          }
+                        }}
+                        style={{ marginLeft: 8 }}
+                      >
+                        <option value="activo">En progreso</option>
+                        <option value="pausado">Pausado</option>
+                        <option value="finalizado">Finalizado</option>
+                        <option value="cancelado">Cancelado</option>
+                      </select>
+                    ) : (proy.estado || 'activo')}
+                    <br />
+                    Creado: {proy.fecha_creacion ? new Date(proy.fecha_creacion).toLocaleString() : 'Sin fecha'}
+                  </div>
+                  <button className="mei-ver-todos-btn" onClick={() => onVerAvances(proy)} style={{ marginTop: 8 }}>
+                    Ver avances
+                  </button>
                 </>
               )}
             </div>
             {clienteAuth && editandoId !== proy.id && (
               <>
-                <button className="mei-ver-todos-btn" onClick={() => onVerAvances(proy)}>
-                  Ver avances
-                </button>
                 <button className="mei-delete-btn" onClick={() => iniciarEdicion(proy)} title="Editar">✏️</button>
                 <button className="mei-delete-btn" onClick={() => eliminarProyecto(proy.id)} title="Eliminar">🗑️</button>
               </>
@@ -541,61 +548,12 @@ function VistaAvances({ proyecto, onVolver, clienteAuth }) {
     setEditAutor('')
   }
 
-  // Selector de proyecto
-  const [proyectos, setProyectos] = useState([]);
-  useEffect(() => {
-    async function fetchProyectos() {
-      const { data } = await supabase.from('proyectos').select('*').order('fecha_creacion', { ascending: false });
-      setProyectos(data || []);
-    }
-    fetchProyectos();
-  }, []);
-
-  function handleProyectoChange(e) {
-    const id = Number(e.target.value);
-    const seleccionado = proyectos.find(p => p.id === id);
-    if (seleccionado) {
-      onVolver(); // Volver a proyectos y luego ir a avances del seleccionado
-      setTimeout(() => {
-        window.dispatchEvent(new CustomEvent('irAAvances', { detail: seleccionado }));
-      }, 0);
-    }
-  }
-
-  useEffect(() => {
-    function handleIrAAvances(e) {
-      if (typeof window.setProyectoSeleccionado === 'function') {
-        window.setProyectoSeleccionado(e.detail);
-      }
-    }
-    window.addEventListener('irAAvances', handleIrAAvances);
-    return () => window.removeEventListener('irAAvances', handleIrAAvances);
-  }, []);
-
-  useEffect(() => {
-    window.setProyectoSeleccionado = (p) => {
-      if (typeof onVolver === 'function') {
-        onVolver();
-        setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('irAAvances', { detail: p }));
-        }, 0);
-      }
-    };
-    return () => { window.setProyectoSeleccionado = null; };
-  }, [onVolver]);
 
   return (
     <section className="mei-section">
       <button className="mei-ver-todos-btn" onClick={onVolver} style={{ marginBottom: 16 }}>&larr; Volver a proyectos</button>
       <h2>Avances de: {proyecto.nombre}</h2>
-      <div style={{ marginBottom: 16 }}>
-        <label htmlFor="proyecto-select"><strong>Seleccionar proyecto:</strong></label>
-        <select id="proyecto-select" value={proyecto.id} onChange={handleProyectoChange} style={{ marginLeft: 8 }}>
-          {proyectos.map(p => (
-            <option key={p.id} value={p.id}>{p.nombre}</option>
-          ))}
-        </select>
-      </div>
+      {/* Filtro de seleccionar proyecto eliminado */}
       {clienteAuth && (
         <form className="mei-upload-form" onSubmit={agregarAvance}>
           <textarea
