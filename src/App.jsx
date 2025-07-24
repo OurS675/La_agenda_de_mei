@@ -552,7 +552,12 @@ function VistaCliente({ onVolver, clienteAuth }) {
                     type="button"
                     onClick={async () => {
                       if (nuevaRed.tipo && nuevaRed.url) {
-                        const nuevasRedes = [...(cliente.redes || []), { tipo: nuevaRed.tipo, url: nuevaRed.url }];
+                        let url = nuevaRed.url.trim();
+                        // Si el usuario no pone http/https, agrégalo
+                        if (!/^https?:\/\//i.test(url)) {
+                          url = 'https://' + url.replace(/^\/+/, '');
+                        }
+                        const nuevasRedes = [...(cliente.redes || []), { tipo: nuevaRed.tipo, url }];
                         setCliente({ ...cliente, redes: nuevasRedes });
                         setNuevaRed({ tipo: '', url: '' });
                         // Guarda en la base de datos si el cliente ya existe
@@ -578,7 +583,9 @@ function VistaCliente({ onVolver, clienteAuth }) {
                 {cliente.redes && cliente.redes.length > 0 && cliente.redes.map((r, idx) => (
                   <li key={idx} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
                     <span style={{ color: '#a77ff2', fontWeight: 600 }}>{r.tipo}:</span>
-                    <a href={r.url} target="_blank" rel="noopener noreferrer" style={{ color: '#a77ff2', textDecoration: 'underline', fontSize: 15, wordBreak: 'break-all' }}>{r.url}</a>
+                    <a href={r.url} target="_blank" rel="noopener noreferrer" style={{ color: '#a77ff2', textDecoration: 'underline', fontSize: 15, wordBreak: 'break-all' }}>
+                      {r.tipo}
+                    </a>
                     {/* SOLO muestra el botón de eliminar si está en modo edición Y el cliente está autenticado */}
                     {editando && clienteAuth && (
                       <button type="button" onClick={async () => {
@@ -1284,65 +1291,77 @@ function VistaAvances({ proyecto, onVolver, clienteAuth }) {
                       <span>Seleccionar imagen o video</span>
                       <input type="file" accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt" onChange={handleEditArchivoChange} style={{ display: 'none' }} />
                     </label>
+                    <input
+                      type="text"
+                      value={editNombre}
+                      onChange={e => setEditNombre(e.target.value)}
+                      style={{ padding: 12, borderRadius: 8, border: '1.5px solid #e5d8fa', fontSize: 16, background: '#faf8ff', marginBottom: 2, width: '100%' }}
+                      placeholder="Nombre del proyecto"
+                    />
+                    {erroresEdit.nombre && <div style={{ color: 'red', marginBottom: 4, fontWeight: 600 }}>{erroresEdit.nombre}</div>}
                     <textarea
                       value={editDescripcion}
                       onChange={e => setEditDescripcion(e.target.value)}
                       style={{ padding: 12, borderRadius: 8, border: '1.5px solid #e5d8fa', fontSize: 16, minHeight: 50, background: '#faf8ff', marginBottom: 2, width: '100%' }}
-                      placeholder="Descripción del avance"
+                      placeholder="Descripción"
                     />
-                    {erroresEdit.descripcion && <div style={{ color: 'red', marginBottom: 4, fontWeight: 600 }}>{erroresEdit.descripcion}</div>}
-                    <input
-                      type="text"
-                      value={editAutor}
-                      onChange={e => setEditAutor(e.target.value)}
+                    <select
+                      value={editEstado}
+                      onChange={e => setEditEstado(e.target.value)}
                       style={{ padding: 12, borderRadius: 8, border: '1.5px solid #e5d8fa', fontSize: 16, background: '#faf8ff', marginBottom: 2, width: '100%' }}
-                      placeholder="Autor (opcional)"
-                    />
+                    >
+                      <option value="activo">En progreso</option>
+                      <option value="pausado">Pausado</option>
+                      <option value="finalizado">Finalizado</option>
+                      <option value="cancelado">Cancelado</option>
+                    </select>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 10 }}>
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
-                      <button
-                        className="mei-cancel-btn"
-                        onClick={cancelarEdicion}
-                        style={{
-                          background: 'transparent',
-                          color: '#a77ff2',
-                          border: '1.5px solid #a77ff2',
-                          borderRadius: 8,
-                          padding: '2px 10px',
-                          fontWeight: 700,
-                          fontSize: 14,
-                          boxShadow: 'none',
-                          whiteSpace: 'nowrap',
-                          textAlign: 'center',
-                          letterSpacing: 1,
-                          cursor: 'pointer',
-                        }}
-                      >
-                        Cancelar
-                      </button>
-                    </div>
-                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                      <button
-                        className="mei-ver-todos-btn"
-                        onClick={() => guardarEdicion(av.id)}
-                        disabled={!editDescripcion}
-                        style={{
-                          background: '#a77ff2',
-                          color: '#fff',
-                          border: 'none',
-                          borderRadius: 8,
-                          padding: '4px 12px',
-                          fontWeight: 700,
-                          fontSize: 15,
-                          boxShadow: '0 2px 8px #e5d8fa',
-                          textAlign: 'center',
-                          letterSpacing: 1,
-                        }}
-                      >
-                        Guardar
-                      </button>
-                    </div>
+                  <div style={{ display: 'flex', gap: 14, justifyContent: 'flex-end', marginTop: 10 }}>
+                    <button
+                      className="mei-ver-todos-btn"
+                      onClick={() => guardarEdicion(proy.id)}
+                      disabled={!editNombre}
+                      style={{
+                        background: '#a77ff2',
+                        color: '#fff',
+                        border: '1.5px solid #a77ff2',
+                        borderRadius: 8,
+                        padding: '5px 8px',
+                        fontWeight: 700,
+                        fontSize: 18,
+                        boxShadow: 'none',
+                        whiteSpace: 'nowrap',
+                        textAlign: 'center',
+                        letterSpacing: 1,
+                        marginBottom: 8,
+                        cursor: 'pointer',
+                        transition: 'background 0.2s, color 0.2s',
+                      }}
+                    >
+                      Guardar
+                    </button>
+                    <button
+                      className="mei-cancel-btn"
+                      onClick={cancelarEdicion}
+                      style={{
+                        background: 'transparent',
+                        color: '#a77ff2',
+                        border: '1.5px solid #a77ff2',
+                        borderRadius: 8,
+                        padding: '4px 18px',
+                        fontWeight: 700,
+                        fontSize: 16,
+                        boxShadow: 'none',
+                        whiteSpace: 'nowrap',
+                        textAlign: 'center',
+                        letterSpacing: 1,
+                        marginBottom: 8,
+                        cursor: 'pointer',
+                        transition: 'background 0.2s, color 0.2s',
+                      }}
+                    >
+                      Cancelar
+                    </button>
                   </div>
                 </div>
               ) : (
