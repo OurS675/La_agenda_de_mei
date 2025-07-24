@@ -1,6 +1,4 @@
 import React, { useEffect, useState } from 'react';
-// Asegura que la clase modal-open se quite siempre que el modal esté cerrado
-// (esto debe ir dentro del componente App, no fuera)
 // Modal de imagen grande reutilizable
 function ImagenModal({ url, alt, onClose }) {
   if (!url) return null;
@@ -155,14 +153,17 @@ const CLIENTE_PASSWORD = 'mei2024'
 
 function App() {
   const [imagenModal, setImagenModal] = useState({ url: null, alt: '' });
+  const [vista, setVista] = useState('proyectos') // 'proyectos', 'avances' o 'cliente'
+  // Scroll to top when changing main page (vista)
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [vista]);
   // Asegura que la clase modal-open se quite siempre que el modal esté cerrado
   useEffect(() => {
     if (!imagenModal.url) {
       document.body.classList.remove('modal-open');
     }
   }, [imagenModal.url]);
-  const [vista, setVista] = useState('proyectos') // 'proyectos', 'avances' o 'cliente'
-  const [filtroVista, setFiltroVista] = useState('proyectos') // 'proyectos' o 'avances'
   const [proyectos, setProyectos] = useState([])
   const [proyectoSeleccionado, setProyectoSeleccionado] = useState(null)
   const [cargando, setCargando] = useState(false)
@@ -178,12 +179,6 @@ function App() {
     }
   }, [clienteAuth]);
 
-  // Recargar proyectos al cambiar el filtro a 'proyectos'
-  useEffect(() => {
-    if (filtroVista === 'proyectos') {
-      obtenerProyectos();
-    }
-  }, [filtroVista]);
 
   useEffect(() => {
     obtenerProyectos()
@@ -196,7 +191,6 @@ function App() {
       .from('proyectos')
       .select('*')
       .order('fecha_creacion', { ascending: false })
-    console.log('Respuesta obtenerProyectos:', { data, error });
     if (error) setError(error.message)
     else setProyectos(data)
     setCargando(false)
@@ -250,7 +244,7 @@ function App() {
               Proyectos
             </button>
             <button onClick={handleClienteClick} style={{ minWidth: 110, textAlign: 'center', padding: '8px 0' }}>
-              Cliente
+              Sobre mí
             </button>
             {!clienteAuth && (
               <button className="login-btn" onClick={() => setShowLogin(true)} style={{ minWidth: 110, background: '#a77ff2', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 0', textAlign: 'center', fontWeight: 600, fontSize: 15 }}>
@@ -394,7 +388,6 @@ function VistaCliente({ onVolver, clienteAuth }) {
     let result, error;
     if (cliente.id !== undefined && cliente.id !== null && typeof cliente.id === 'number' && !isNaN(cliente.id)) {
       // UPDATE: solo si existe id
-      console.log('Payload a enviar a Supabase (update):', clienteData);
       result = await supabase.from('cliente').update(clienteData).eq('id', cliente.id);
       error = result.error;
     } else {
@@ -402,7 +395,6 @@ function VistaCliente({ onVolver, clienteAuth }) {
       let insertData = { ...clienteData };
       if ('id' in insertData) delete insertData.id;
       Object.keys(insertData).forEach(k => { if (k === 'id') delete insertData[k]; });
-      console.log('Payload a enviar a Supabase (insert):', insertData);
       result = await supabase.from('cliente').insert([insertData]);
       error = result.error;
     }
@@ -423,7 +415,7 @@ function VistaCliente({ onVolver, clienteAuth }) {
   return (
     <section className="mei-section">
       <button className="mei-ver-todos-btn" onClick={onVolver} style={{ marginBottom: 16 }}>&larr; Volver</button>
-      <h2 style={{ color: '#a77ff2', fontWeight: 700, marginBottom: 18 }}>Información del Cliente</h2>
+      <h2 style={{ color: '#a77ff2', fontWeight: 700, marginBottom: 18 }}>Sobre mí</h2>
       {cargando && !editando ? <div>Cargando...</div> : (
         <>
           <form onSubmit={handleGuardar} style={{
@@ -606,19 +598,16 @@ function VistaProyectos({ proyectos, onAgregar, onVerAvances, cargando, error, c
         .replace(/_+/g, '_');
       const nombreArchivo = `proyecto_${Date.now()}_${cleanName}`;
       const { data, error: uploadError } = await supabase.storage.from('imagenes').upload(nombreArchivo, archivo);
-      console.log('Resultado upload archivo:', { data, uploadError });
       if (uploadError) {
         setErrorLocal('Error al subir archivo: ' + uploadError.message);
         setAgregando(false);
         return;
       }
       archivoUrl = supabase.storage.from('imagenes').getPublicUrl(nombreArchivo).data.publicUrl;
-      console.log('URL pública del archivo:', archivoUrl);
     }
     const { data: insertData, error } = await supabase
       .from('proyectos')
       .insert([{ nombre, descripcion, estado, archivo_url: archivoUrl }]);
-    console.log('Resultado insert proyecto:', { insertData, error });
     if (error) setErrorLocal(error.message)
     else Swal.fire('¡Proyecto agregado!', '', 'success')
     setNombre('')
@@ -767,17 +756,20 @@ function VistaProyectos({ proyectos, onAgregar, onVerAvances, cargando, error, c
       {/* Mostrar proyectos subidos por el cliente y todos los proyectos */}
       <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
         {proyectos.length === 0 && (
-          <li style={{ color: '#a77ff2', textAlign: 'center', marginTop: 24 }}>
-            No hay proyectos registrados.
+          <li style={{ color: '#a77ff2', textAlign: 'center', marginTop: 24, fontWeight: 600, fontSize: 18 }}>
+            No hay proyectos por mostrar en este momento.
             <br />
-            <span style={{ fontSize: '0.9em', color: '#888' }}>
-              (¿No aparecen proyectos? Revisa la consola del navegador para ver detalles de la respuesta de Supabase)
+            <span style={{ fontSize: '0.95em', color: '#aaa', fontWeight: 400 }}>
+              Cuando se agregue un proyecto aparecerá aquí.
             </span>
           </li>
         )}
         {proyectos.map(proy => (
-          <li key={proy.id} className="mei-avance-item" style={{ background: '#faf8ff', borderRadius: 10, marginBottom: 18, boxShadow: '0 1px 6px #eee', padding: '5vw 4vw', display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap', minWidth: 0 }}>
-            <div className="mei-avance-desc" style={{ flex: 1, minWidth: 0 }}>
+          <li key={proy.id} className="mei-avance-item" style={{ background: '#faf8ff', borderRadius: 10, marginBottom: 18, boxShadow: '0 1px 6px #eee', padding: '5vw 4vw', display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap', minWidth: 0, position: 'relative' }}>
+            {clienteAuth && editandoId !== proy.id && (
+              <button className="mei-delete-btn" onClick={() => eliminarProyecto(proy.id)} title="Eliminar proyecto" style={{ position: 'absolute', top: 10, right: 10, zIndex: 2, background: 'transparent', color: '#a77ff2', border: 'none', borderRadius: '50%', padding: '4px 14px', fontWeight: 700, fontSize: 32, boxShadow: 'none', minWidth: 44, width: 44, height: 44, alignSelf: 'flex-end', transition: 'all 0.2s', whiteSpace: 'nowrap', cursor: 'pointer', lineHeight: 1 }}>×</button>
+            )}
+            <div className="mei-avance-desc" style={{ flex: 1, minWidth: 0, position: 'relative' }}>
               {editandoId === proy.id ? (
                 <div style={{ background: '#f0eaff', borderRadius: 14, padding: '22px 16px', marginBottom: 8, boxShadow: '0 2px 8px #e5d8fa', display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 500 }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'center' }}>
@@ -818,10 +810,49 @@ function VistaProyectos({ proyectos, onAgregar, onVerAvances, cargando, error, c
                     </select>
                   </div>
                   <div style={{ display: 'flex', gap: 14, justifyContent: 'flex-end', marginTop: 10 }}>
-                    <button className="mei-ver-todos-btn" onClick={() => guardarEdicion(proy.id)} disabled={!editNombre} style={{ background: '#a77ff2', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 28px', minWidth: 90, fontWeight: 700, fontSize: 16, boxShadow: '0 2px 8px #e5d8fa', textAlign: 'center', letterSpacing: 1 }}>
+                    <button
+                      className="mei-ver-todos-btn"
+                      onClick={() => guardarEdicion(proy.id)}
+                      disabled={!editNombre}
+                      style={{
+                        background: '#a77ff2',
+                        color: '#fff',
+                        border: '1.5px solid #a77ff2',
+                        borderRadius: 8,
+                        padding: '5px 8px',
+                        fontWeight: 700,
+                        fontSize: 18,
+                        boxShadow: 'none',
+                        whiteSpace: 'nowrap',
+                        textAlign: 'center',
+                        letterSpacing: 1,
+                        marginBottom: 8,
+                        cursor: 'pointer',
+                        transition: 'background 0.2s, color 0.2s',
+                      }}
+                    >
                       Guardar
                     </button>
-                    <button className="mei-delete-btn" onClick={cancelarEdicion} style={{ background: '#f7d6e0', color: '#a77ff2', border: 'none', borderRadius: 8, padding: '5px 5px', minWidth: 90, fontWeight: 700, fontSize: 16, boxShadow: '0 2px 8px #e5d8fa', whiteSpace: 'nowrap', textAlign: 'center', letterSpacing: 1 }}>
+                    <button
+                      className="mei-cancel-btn"
+                      onClick={cancelarEdicion}
+                      style={{
+                        background: 'transparent',
+                        color: '#a77ff2',
+                        border: '1.5px solid #a77ff2',
+                        borderRadius: 8,
+                        padding: '4px 18px',
+                        fontWeight: 700,
+                        fontSize: 16,
+                        boxShadow: 'none',
+                        whiteSpace: 'nowrap',
+                        textAlign: 'center',
+                        letterSpacing: 1,
+                        marginBottom: 8,
+                        cursor: 'pointer',
+                        transition: 'background 0.2s, color 0.2s',
+                      }}
+                    >
                       Cancelar
                     </button>
                   </div>
@@ -914,9 +945,8 @@ function VistaProyectos({ proyectos, onAgregar, onVerAvances, cargando, error, c
               )}
             </div>
             {clienteAuth && editandoId !== proy.id && (
-              <div style={{ display: 'flex', flexDirection: 'row', gap: 10, alignItems: 'center', justifyContent: 'flex-end', minWidth: 120, marginTop: 8 }}>
-                <button className="mei-edit-btn" onClick={() => iniciarEdicion(proy)} title="Editar" style={{ background: '#a77ff2', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 20px', fontWeight: 600, fontSize: 15, boxShadow: '0 1px 2px #e5d8fa', minWidth: 90, textAlign: '' }}>Editar</button>
-                <button className="mei-delete-btn" onClick={() => eliminarProyecto(proy.id)} title="Eliminar" style={{ background: '#f7d6e0', color: '#a77ff2', border: 'none', borderRadius: 6, padding: '5px, 5px', fontWeight: 600, fontSize: 15, boxShadow: '0 1px 2px #e5d8fa', minWidth: 50, textAlign: 'center' }}>🗑️</button>
+              <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-end', marginBottom: 4 }}>
+                <button className="mei-edit-btn" onClick={() => iniciarEdicion(proy)} title="Editar" style={{ background: '#a77ff2', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 12px', fontWeight: 600, fontSize: 15, boxShadow: '0 1px 2px #e5d8fa', minWidth: 70 }}>Editar</button>
               </div>
             )}
           </li>
@@ -1167,13 +1197,50 @@ function VistaAvances({ proyecto, onVolver, clienteAuth }) {
                       placeholder="Autor (opcional)"
                     />
                   </div>
-                  <div style={{ display: 'flex', gap: 14, justifyContent: 'flex-end', marginTop: 10 }}>
-                    <button className="mei-ver-todos-btn" onClick={() => guardarEdicion(av.id)} disabled={!editDescripcion} style={{ background: '#a77ff2', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 28px', minWidth: 90, fontWeight: 700, fontSize: 16, boxShadow: '0 2px 8px #e5d8fa', textAlign: 'center', letterSpacing: 1 }}>
-                      Guardar
-                    </button>
-                    <button className="mei-delete-btn" onClick={cancelarEdicion} style={{ background: '#f7d6e0', color: '#a77ff2', border: 'none', borderRadius: 8, padding: '5px 5px', minWidth: 90, fontWeight: 700, fontSize: 16, boxShadow: '0 2px 8px #e5d8fa', whiteSpace: 'nowrap', textAlign: 'center', letterSpacing: 1 }}>
-                      Cancelar
-                    </button>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 10 }}>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+                      <button
+                        className="mei-cancel-btn"
+                        onClick={cancelarEdicion}
+                        style={{
+                          background: 'transparent',
+                          color: '#a77ff2',
+                          border: '1.5px solid #a77ff2',
+                          borderRadius: 8,
+                          padding: '2px 10px',
+                          fontWeight: 700,
+                          fontSize: 14,
+                          boxShadow: 'none',
+                          whiteSpace: 'nowrap',
+                          textAlign: 'center',
+                          letterSpacing: 1,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                      <button
+                        className="mei-ver-todos-btn"
+                        onClick={() => guardarEdicion(av.id)}
+                        disabled={!editDescripcion}
+                        style={{
+                          background: '#a77ff2',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: 8,
+                          padding: '4px 12px',
+                          fontWeight: 700,
+                          fontSize: 15,
+                          boxShadow: '0 2px 8px #e5d8fa',
+                          textAlign: 'center',
+                          letterSpacing: 1,
+                        }}
+                      >
+                        Guardar
+                      </button>
+                    </div>
                   </div>
                 </div>
               ) : (
@@ -1205,17 +1272,20 @@ function VistaAvances({ proyecto, onVolver, clienteAuth }) {
               )}
             </div>
             {clienteAuth && editandoId !== av.id && (
-              <div style={{ display: 'flex', flexDirection: 'row', gap: 10, alignItems: 'center', justifyContent: 'flex-end', minWidth: 120, marginTop: 8 }}>
-                <button className="mei-edit-btn" onClick={() => iniciarEdicion(av)} title="Editar" style={{ background: '#a77ff2', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 20px', fontWeight: 600, fontSize: 15, boxShadow: '0 1px 2px #e5d8fa', minWidth: 90 }}>Editar</button>
-                <button className="mei-delete-btn" onClick={() => eliminarAvance(av.id)} title="Eliminar" style={{ background: '#f7d6e0', color: '#a77ff2', border: 'none', borderRadius: 6, padding: '5px, 5px', fontWeight: 600, fontSize: 15, boxShadow: '0 1px 2px #e5d8fa', minWidth: 50 }}>🗑️</button>
+              <div style={{ width: '100%' }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', margin: '10px 0 0 0' }}>
+                  <button className="mei-delete-btn" onClick={() => eliminarAvance(av.id)} title="Eliminar avance" style={{ background: 'transparent', color: '#a77ff2', border: 'none', borderRadius: '50%', padding: '4px 14px', fontWeight: 700, fontSize: 32, boxShadow: 'none', minWidth: 44, width: 44, height: 44, alignSelf: 'flex-end', transition: 'all 0.2s', whiteSpace: 'nowrap', cursor: 'pointer', lineHeight: 1 }}>×</button>
+                </div>
+                <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-end', marginBottom: 4 }}>
+                  <button className="mei-edit-btn" onClick={() => iniciarEdicion(av)} title="Editar" style={{ background: '#a77ff2', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 12px', fontWeight: 600, fontSize: 15, boxShadow: '0 1px 2px #e5d8fa', minWidth: 70 }}>Editar</button>
+                </div>
               </div>
             )}
           </li>
         ))}
       </ul>
     </section>
-  )
+  );
 }
-
 }
 export default App
