@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import Logo from '../public/Logo.png';
 // Modal de imagen grande reutilizable
 function ImagenModal({ url, alt, onClose }) {
   if (!url) return null;
@@ -238,7 +239,24 @@ function App() {
       <ImagenModal url={imagenModal.url} alt={imagenModal.alt} onClose={() => setImagenModal({ url: null, alt: '' })} />
       <header className="mei-header" style={{ boxShadow: '0 2px 8px #eee', marginBottom: 24, padding: '16px 0', background: '#fff', borderRadius: 0 }}>
         <div className="mei-header-inner" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', maxWidth: 900, margin: '0 auto', padding: '0 16px', flexWrap: 'wrap' }}>
-          <h1 style={{ fontSize: 28, color: '#a77ff2', margin: 0, letterSpacing: 1, flex: 1, minWidth: 180 }}>La Agenda de Mei</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+            <img
+              src={Logo}
+              alt="Logo La Agenda de Mei"
+              style={{
+                width: 54,
+                height: 54,
+                borderRadius: 12,
+                boxShadow: '0 2px 8px #e5d8fa',
+                background: '#fff',
+                objectFit: 'contain',
+                marginRight: 8,
+              }}
+            />
+            <h1 style={{ fontSize: 28, color: '#a77ff2', margin: 0, letterSpacing: 1, flex: 1, minWidth: 180 }}>
+              La Agenda de Mei
+            </h1>
+          </div>
           <nav style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
             <button className={vista === 'proyectos' ? 'active' : ''} onClick={volverAProyectos} disabled={vista === 'proyectos'} style={{ minWidth: 110, textAlign: 'center', padding: '8px 0' }}>
               Proyectos
