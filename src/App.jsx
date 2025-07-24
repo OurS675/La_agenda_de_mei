@@ -506,7 +506,8 @@ function VistaCliente({ onVolver, clienteAuth }) {
             </label>
             <div style={{ width: '100%', marginBottom: 2 }}>
               <span style={{ fontWeight: 600, color: '#a77ff2' }}>Redes sociales:</span>
-              {editando && (
+              {/* SOLO muestra el formulario para añadir/eliminar redes si está en modo edición Y el cliente está autenticado */}
+              {editando && clienteAuth && (
                 <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
                   <select
                     value={nuevaRed.tipo}
@@ -531,14 +532,28 @@ function VistaCliente({ onVolver, clienteAuth }) {
                   />
                   <button
                     type="button"
-                    onClick={() => {
+                    onClick={async () => {
                       if (nuevaRed.tipo && nuevaRed.url) {
-                        setCliente({ ...cliente, redes: [...cliente.redes, { tipo: nuevaRed.tipo, url: nuevaRed.url }] });
+                        const nuevasRedes = [...(cliente.redes || []), { tipo: nuevaRed.tipo, url: nuevaRed.url }];
+                        setCliente({ ...cliente, redes: nuevasRedes });
                         setNuevaRed({ tipo: '', url: '' });
+                        // Guarda en la base de datos si el cliente ya existe
+                        if (cliente.id !== undefined && cliente.id !== null && typeof cliente.id === 'number' && !isNaN(cliente.id)) {
+                          await supabase.from('cliente').update({ redes: nuevasRedes }).eq('id', cliente.id);
+                          // Recarga el cliente para reflejar el cambio
+                          const { data } = await supabase.from('cliente').select('*').eq('id', cliente.id).single();
+                          if (data) setCliente(data);
+                        } else {
+                          // Si no existe, crea el cliente con las redes
+                          const { data, error } = await supabase.from('cliente').insert([{ ...cliente, redes: nuevasRedes }]).select().single();
+                          if (!error && data) setCliente(data);
+                        }
                       }
                     }}
                     style={{ background: '#a77ff2', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 18px', fontWeight: 700, fontSize: 15, boxShadow: '0 2px 8px #e5d8fa', cursor: 'pointer' }}
-                  >Agregar</button>
+                  >
+                    Agregar
+                  </button>
                 </div>
               )}
               <ul style={{ listStyle: 'none', padding: 0, margin: '10px 0 0 0' }}>
@@ -546,11 +561,11 @@ function VistaCliente({ onVolver, clienteAuth }) {
                   <li key={idx} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
                     <span style={{ color: '#a77ff2', fontWeight: 600 }}>{r.tipo}:</span>
                     <a href={r.url} target="_blank" rel="noopener noreferrer" style={{ color: '#a77ff2', textDecoration: 'underline', fontSize: 15, wordBreak: 'break-all' }}>{r.url}</a>
-                    {editando && (
+                    {/* SOLO muestra el botón de eliminar si está en modo edición Y el cliente está autenticado */}
+                    {editando && clienteAuth && (
                       <button type="button" onClick={async () => {
                         const nuevasRedes = cliente.redes.filter((_, i) => i !== idx);
                         setCliente({ ...cliente, redes: nuevasRedes });
-                        // Si el cliente ya existe en la base de datos, actualiza el campo redes
                         if (cliente.id !== undefined && cliente.id !== null && typeof cliente.id === 'number' && !isNaN(cliente.id)) {
                           await supabase.from('cliente').update({ redes: nuevasRedes }).eq('id', cliente.id);
                         }
@@ -1007,7 +1022,7 @@ function VistaProyectos({ proyectos, onAgregar, onVerAvances, cargando, error, c
                     <br />
                     Creado: {proy.fecha_creacion ? new Date(proy.fecha_creacion).toLocaleString() : 'Sin fecha'}
                   </div>
-                  <button className="mei-ver-todos-btn" onClick={() => onVerAvances(proy)} style={{ marginTop: 8 }}>
+                  <button className="mei_ver_todos_btn" onClick={() => onVerAvances(proy)} style={{ marginTop: 8 }}>
                     Ver avances
                   </button>
                 </>
