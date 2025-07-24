@@ -149,7 +149,7 @@ import './App.css'
 import './responsive.css'
 import Swal from 'sweetalert2'
 
-const CLIENTE_PASSWORD = 'mari20'
+const CLIENTE_PASSWORD = 'Mafemape20251808'
 
 function App() {
   const [imagenModal, setImagenModal] = useState({ url: null, alt: '' });
