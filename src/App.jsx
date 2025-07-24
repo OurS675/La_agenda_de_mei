@@ -149,7 +149,7 @@ import './App.css'
 import './responsive.css'
 import Swal from 'sweetalert2'
 
-const CLIENTE_PASSWORD = 'mei2024'
+const CLIENTE_PASSWORD = 'mari20'
 
 function App() {
   const [imagenModal, setImagenModal] = useState({ url: null, alt: '' });
@@ -299,9 +299,10 @@ function VistaCliente({ onVolver, clienteAuth }) {
     email: '',
     imagen_url: '',
     acerca_de: '',
-    red_social: '',
+    redes: [], // [{ tipo: 'Instagram', url: '...' }, ...]
     // id: undefined (solo se agrega si existe en la base de datos)
   });
+  const [nuevaRed, setNuevaRed] = useState({ tipo: '', url: '' });
   const [editando, setEditando] = useState(false);
   const [cargando, setCargando] = useState(false);
   const [archivo, setArchivo] = useState(null);
@@ -369,15 +370,18 @@ function VistaCliente({ onVolver, clienteAuth }) {
       imagen_url = supabase.storage.from('imagenes').getPublicUrl(nombreArchivo).data.publicUrl;
     }
     // Solo enviar los campos válidos y no vacíos de la tabla cliente
-    const allowedFields = ['nombre', 'telefono', 'email', 'imagen_url', 'acerca_de', 'red_social'];
+    const allowedFields = ['nombre', 'telefono', 'email', 'imagen_url', 'acerca_de', 'redes'];
     const clienteData = {};
     allowedFields.forEach(field => {
       if (field === 'imagen_url') {
         if (typeof imagen_url === 'string' && imagen_url.trim() !== '') {
           clienteData.imagen_url = imagen_url;
         }
+      } else if (field === 'redes') {
+        if (Array.isArray(cliente.redes) && cliente.redes.length > 0) {
+          clienteData.redes = cliente.redes.filter(r => r.tipo && r.url);
+        }
       } else if (typeof cliente[field] === 'string' && cliente[field].trim() !== '') {
-        // Si el campo es telefono y es numérico en la base, conviértelo
         if (field === 'telefono' && !isNaN(cliente[field])) {
           clienteData.telefono = Number(cliente[field]);
         } else {
@@ -407,7 +411,18 @@ function VistaCliente({ onVolver, clienteAuth }) {
       setArchivo(null);
       // Recargar datos del cliente para reflejar los cambios (y obtener el id generado)
       const { data } = await supabase.from('cliente').select('*').limit(1).maybeSingle();
-      if (data) setCliente(data);
+      if (data) {
+        // Asegura que redes sea un array
+        let redes = data.redes;
+        if (typeof redes === 'string') {
+          try {
+            redes = JSON.parse(redes);
+          } catch {
+            redes = [];
+          }
+        }
+        setCliente({ ...data, redes: Array.isArray(redes) ? redes : [] });
+      }
     }
     setCargando(false);
   }
@@ -489,11 +504,65 @@ function VistaCliente({ onVolver, clienteAuth }) {
                 width: '100%', padding: '10px', borderRadius: 8, border: '1.5px solid #e5d8fa', fontSize: 16, marginTop: 4, minHeight: 60, background: editando ? '#faf8ff' : '#f5f3fa', transition: 'background 0.2s'
               }} />
             </label>
-            <label style={{ width: '100%', fontWeight: 600, color: '#a77ff2', marginBottom: 2 }}>Red social:
-              <input name="red_social" value={cliente.red_social} onChange={handleChange} disabled={!editando} placeholder="Instagram, Facebook, etc." style={{
-                width: '100%', padding: '10px', borderRadius: 8, border: '1.5px solid #e5d8fa', fontSize: 16, marginTop: 4, background: editando ? '#faf8ff' : '#f5f3fa', transition: 'background 0.2s'
-              }} />
-            </label>
+            <div style={{ width: '100%', marginBottom: 2 }}>
+              <span style={{ fontWeight: 600, color: '#a77ff2' }}>Redes sociales:</span>
+              {editando && (
+                <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+                  <select
+                    value={nuevaRed.tipo}
+                    onChange={e => setNuevaRed({ ...nuevaRed, tipo: e.target.value })}
+                    style={{ padding: '8px', borderRadius: 8, border: '1.5px solid #e5d8fa', fontSize: 15, background: '#faf8ff', minWidth: 120 }}
+                  >
+                    <option value="">Selecciona red</option>
+                    <option value="Instagram">Instagram</option>
+                    <option value="Facebook">Facebook</option>
+                    <option value="Twitter">Twitter</option>
+                    <option value="TikTok">TikTok</option>
+                    <option value="LinkedIn">LinkedIn</option>
+                    <option value="YouTube">YouTube</option>
+                    <option value="Otra">Otra</option>
+                  </select>
+                  <input
+                    type="url"
+                    placeholder="Enlace de la red social"
+                    value={nuevaRed.url}
+                    onChange={e => setNuevaRed({ ...nuevaRed, url: e.target.value })}
+                    style={{ padding: '8px', borderRadius: 8, border: '1.5px solid #e5d8fa', fontSize: 15, background: '#faf8ff', minWidth: 220 }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (nuevaRed.tipo && nuevaRed.url) {
+                        setCliente({ ...cliente, redes: [...cliente.redes, { tipo: nuevaRed.tipo, url: nuevaRed.url }] });
+                        setNuevaRed({ tipo: '', url: '' });
+                      }
+                    }}
+                    style={{ background: '#a77ff2', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 18px', fontWeight: 700, fontSize: 15, boxShadow: '0 2px 8px #e5d8fa', cursor: 'pointer' }}
+                  >Agregar</button>
+                </div>
+              )}
+              <ul style={{ listStyle: 'none', padding: 0, margin: '10px 0 0 0' }}>
+                {cliente.redes && cliente.redes.length > 0 && cliente.redes.map((r, idx) => (
+                  <li key={idx} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                    <span style={{ color: '#a77ff2', fontWeight: 600 }}>{r.tipo}:</span>
+                    <a href={r.url} target="_blank" rel="noopener noreferrer" style={{ color: '#a77ff2', textDecoration: 'underline', fontSize: 15, wordBreak: 'break-all' }}>{r.url}</a>
+                    {editando && (
+                      <button type="button" onClick={async () => {
+                        const nuevasRedes = cliente.redes.filter((_, i) => i !== idx);
+                        setCliente({ ...cliente, redes: nuevasRedes });
+                        // Si el cliente ya existe en la base de datos, actualiza el campo redes
+                        if (cliente.id !== undefined && cliente.id !== null && typeof cliente.id === 'number' && !isNaN(cliente.id)) {
+                          await supabase.from('cliente').update({ redes: nuevasRedes }).eq('id', cliente.id);
+                        }
+                      }} style={{ background: 'transparent', color: '#eb2f06', border: 'none', fontWeight: 700, fontSize: 18, cursor: 'pointer', marginLeft: 4 }}>×</button>
+                    )}
+                  </li>
+                ))}
+                {!editando && cliente.redes && cliente.redes.length === 0 && (
+                  <li style={{ color: '#888', fontSize: 15 }}>No hay redes sociales agregadas.</li>
+                )}
+              </ul>
+            </div>
             {clienteAuth && editando && (
               <button className="mei-ver-todos-btn" type="submit" disabled={cargando} style={{
                 background: '#a77ff2', color: '#fff', border: 'none', borderRadius: 8, padding: '12px 0', fontWeight: 700, fontSize: 17, marginTop: 8, boxShadow: '0 2px 8px #e5d8fa', letterSpacing: 1, transition: 'background 0.2s'
